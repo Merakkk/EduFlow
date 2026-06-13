@@ -48,8 +48,31 @@ export default function App() {
   });
 
   // GPA / IPK dynamic state
-  const [semesterGPAs, setSemesterGPAs] = useState<Record<number, number>>({ 1: 3.75, 2: 3.80, 3: 3.85, 4: 3.90, 5: 3.82 });
-  const [currentSemester, setCurrentSemester] = useState<number>(5);
+  const [semesterGPAs, setSemesterGPAs] = useState<Record<number, number>>(() => {
+    try {
+      const saved = localStorage.getItem('rancang_belajar_semester_gpas');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (e) {
+      console.warn("localStorage fallback semesterGPAs corrupted", e);
+    }
+    return { 1: 3.75, 2: 3.80, 3: 3.85, 4: 3.90, 5: 3.82 };
+  });
+
+  const [currentSemester, setCurrentSemester] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('rancang_belajar_current_semester');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 1) return parsed;
+      }
+    } catch (e) {
+      console.warn("localStorage fallback currentSemester corrupted", e);
+    }
+    return 5;
+  });
 
   // Load state from localStorage with fallback to initial data
   const [courses, setCourses] = useState<Course[]>(() => {
@@ -260,10 +283,11 @@ export default function App() {
     }
   };
 
-  const handleSetCurrentSemester = async (newVal: number) => {
+  const handleSetCurrentSemester = async (newVal: number | ((prev: number) => number)) => {
     try {
+      const resolvedVal = typeof newVal === 'function' ? newVal(currentSemester) : newVal;
       await updateDoc(doc(db, 'workspaces', 'default'), {
-        currentSemester: newVal,
+        currentSemester: resolvedVal,
         updatedAt: new Date().toISOString()
       });
     } catch (e) {

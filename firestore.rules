@@ -26,7 +26,7 @@ service cloud.firestore {
         && data.keys().size() <= 6
         && data.currentSemester is int
         && data.currentSemester >= 1
-        && data.currentSemester <= 8
+        && data.currentSemester <= 14
         && data.semesterGPAs is map
         && data.simulationDate is string
         && data.simulationDate.size() <= 20;

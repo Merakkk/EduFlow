@@ -38,6 +38,11 @@ export default function Semester({
   setSemesterGPAs,
 }: SemesterProps) {
   const [selectedSemTab, setSelectedSemTab] = useState<number>(currentSemester);
+
+  // Keep tab selected on current active semester when it loads or changes from Firestore
+  React.useEffect(() => {
+    setSelectedSemTab(currentSemester);
+  }, [currentSemester]);
   const [isAddingCourse, setIsAddingCourse] = useState(false);
   const [semesterToDelete, setSemesterToDelete] = useState<number | null>(null);
   const [courseToDelete, setCourseToDelete] = useState<{ id: string; name: string } | null>(null);
