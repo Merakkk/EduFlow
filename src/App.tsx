@@ -132,6 +132,46 @@ export default function App() {
     }
   }, [tasks]);
 
+  // Real-time synchronization across views/tabs/frames sharing the same localStorage
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (!e.key) return;
+      try {
+        if (e.key === 'rancang_belajar_courses' && e.newValue) {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setCourses(prev => JSON.stringify(prev) !== e.newValue ? parsed : prev);
+          }
+        }
+        if (e.key === 'rancang_belajar_tasks' && e.newValue) {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setTasks(prev => JSON.stringify(prev) !== e.newValue ? parsed : prev);
+          }
+        }
+        if (e.key === 'rancang_belajar_semester_gpas' && e.newValue) {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed && typeof parsed === 'object') {
+            setSemesterGPAs(prev => JSON.stringify(prev) !== e.newValue ? parsed : prev);
+          }
+        }
+        if (e.key === 'rancang_belajar_current_semester' && e.newValue) {
+          const parsed = parseInt(e.newValue, 10);
+          if (!isNaN(parsed)) {
+            setCurrentSemester(prev => prev !== parsed ? parsed : prev);
+          }
+        }
+      } catch (err) {
+        console.error("Error synchronizing localStorage changes", err);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   // Task Crud Operations
   const handleAddTask = (newTask: Omit<Task, 'id'>) => {
     const taskWithId: Task = {
