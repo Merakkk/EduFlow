@@ -83,6 +83,8 @@ export default function App() {
   const [importQuickCourse, setImportQuickCourse] = useState<boolean>(false);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [isCloudSynced, setIsCloudSynced] = useState<boolean>(false);
 
   // Firestore real-time synchronization hook
   useEffect(() => {
@@ -146,9 +148,13 @@ export default function App() {
             if (data.simulationDate !== undefined) setSimulationDate(data.simulationDate);
           }
           setLoading(false);
+          setIsCloudSynced(true);
+          setSyncError(null);
         }, (err) => {
+          setSyncError(`Workspace sync failed: ${err.message}`);
           handleFirestoreError(err, OperationType.GET, 'workspaces/default');
           setLoading(false);
+          setIsCloudSynced(false);
         });
 
         // Live Courses collection listener
@@ -173,10 +179,14 @@ export default function App() {
             });
           });
           setCourses(list);
+          setIsCloudSynced(true);
+          setSyncError(null);
           try {
             localStorage.setItem('rancang_belajar_courses', JSON.stringify(list));
           } catch (_) {}
         }, (err) => {
+          setSyncError(`Courses sync failed: ${err.message}`);
+          setIsCloudSynced(false);
           handleFirestoreError(err, OperationType.LIST, 'workspaces/default/courses');
         });
 
@@ -197,15 +207,21 @@ export default function App() {
             });
           });
           setTasks(list);
+          setIsCloudSynced(true);
+          setSyncError(null);
           try {
             localStorage.setItem('rancang_belajar_tasks', JSON.stringify(list));
           } catch (_) {}
         }, (err) => {
+          setSyncError(`Tasks sync failed: ${err.message}`);
+          setIsCloudSynced(false);
           handleFirestoreError(err, OperationType.LIST, 'workspaces/default/tasks');
         });
 
       } catch (err) {
         console.error("Firestore setup error:", err);
+        setSyncError(`Database connection failed: ${err instanceof Error ? err.message : String(err)}`);
+        setIsCloudSynced(false);
         setLoading(false);
       }
     };
@@ -509,6 +525,8 @@ export default function App() {
           todayStr={simulationDate}
           onQuickToggleTaskStatus={handleQuickToggleTaskStatus}
           onSetSimulationDate={handleSetSimulationDate}
+          isCloudSynced={isCloudSynced}
+          syncError={syncError}
         />
 
         {/* Responsive Floating Simulation date for Mobile layouts */}

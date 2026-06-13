@@ -18,6 +18,8 @@ interface HeaderProps {
   todayStr: string;
   onQuickToggleTaskStatus: (taskId: string) => void;
   onSetSimulationDate: (newDate: string) => void;
+  isCloudSynced?: boolean;
+  syncError?: string | null;
 }
 
 export default function Header({
@@ -25,7 +27,9 @@ export default function Header({
   tasks,
   todayStr,
   onQuickToggleTaskStatus,
-  onSetSimulationDate
+  onSetSimulationDate,
+  isCloudSynced = false,
+  syncError = null
 }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -55,7 +59,23 @@ export default function Header({
           <h2 className="font-display font-bold text-slate-900 text-sm sm:text-base tracking-tight leading-tight flex items-center gap-1">
             EduFlow
           </h2>
-          <p className="text-[10.5px] text-slate-500 font-semibold">Selamat datang kembali, Helris</p>
+          <p className="text-[10.5px] text-slate-500 font-semibold flex items-center gap-1.5 flex-wrap">
+            <span>Selamat datang kembali, Helris</span>
+            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+            {isCloudSynced ? (
+              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold border border-emerald-100">
+                ● Terhubung Live
+              </span>
+            ) : syncError ? (
+              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold border border-amber-200" title={syncError}>
+                ⚠️ Mode Offline
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded-full text-[9px] font-bold border border-slate-200">
+                ● Menghubungkan...
+              </span>
+            )}
+          </p>
         </div>
       </div>
 
