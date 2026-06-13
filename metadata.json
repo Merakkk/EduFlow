@@ -1,0 +1,6 @@
+{
+  "name": "Manajemen Mahasiswa",
+  "description": "Aplikasi manajemen tugas, mata kuliah, jadwal deadline, dan kalender akademik untuk mahasiswa.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
