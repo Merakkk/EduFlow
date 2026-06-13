@@ -378,7 +378,7 @@ export default function Semester({
                 <button
                   type="button"
                   onClick={() => setIsAddingCourse(false)}
-                  className="p-1 rounded text-slate-400 hover:text-slate-650"
+                  className="p-1 rounded text-slate-400 hover:text-slate-600"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -449,7 +449,7 @@ export default function Semester({
                 </button>
                 <button
                   type="submit"
-                  className="px-3.5 py-1.5 rounded-lg bg-indigo-650 hover:bg-indigo-700 text-xs font-bold text-white shadow"
+                  className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow"
                 >
                   Tambah & Simpan
                 </button>
@@ -633,7 +633,7 @@ export default function Semester({
               <button
                 type="button"
                 onClick={handleConfirmDeleteSemester}
-                className="rounded-lg bg-rose-650 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 transition cursor-pointer animate-in zoom-in-50 duration-75"
+                className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 transition cursor-pointer animate-in zoom-in-50 duration-75"
               >
                 Hapus Semester
               </button>
@@ -668,7 +668,7 @@ export default function Semester({
                   onDeleteCourse(courseToDelete.id);
                   setCourseToDelete(null);
                 }}
-                className="rounded-lg bg-rose-650 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 transition cursor-pointer animate-in zoom-in-50 duration-75"
+                className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 transition cursor-pointer animate-in zoom-in-50 duration-75"
               >
                 Hapus
               </button>

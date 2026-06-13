@@ -18,6 +18,7 @@ interface DashboardProps {
   courses: Course[];
   tasks: Task[];
   todayStr: string;
+  currentSemester?: number;
   onNavigate: (tab: 'dashboard' | 'courses' | 'tasks' | 'calendar') => void;
   onAddTaskClick: () => void;
   onAddCourseClick: () => void;
@@ -28,6 +29,7 @@ export default function Dashboard({
   courses,
   tasks,
   todayStr,
+  currentSemester,
   onNavigate,
   onAddTaskClick,
   onAddCourseClick,
@@ -42,6 +44,9 @@ export default function Dashboard({
     DAYS_OF_WEEK.includes(todayDayName) ? todayDayName : 'Senin'
   );
 
+  const activeSemester = currentSemester || 5;
+  const currentSemCourses = courses.filter(c => (c.semester || activeSemester) === activeSemester);
+
   // Stats calculation
   const totalTasks = tasks.length;
   const completedTasksCount = tasks.filter(t => t.status === 'Selesai').length;
@@ -51,8 +56,8 @@ export default function Dashboard({
   
   const completionPercentage = totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0;
 
-  // Filter schedules for selected day
-  const filteredCourses = courses
+  // Filter schedules for selected day and current active semester only
+  const filteredCourses = currentSemCourses
     .filter(c => c.day === scheduleDay)
     .sort((a, b) => a.timeStart.localeCompare(b.timeStart));
 
@@ -121,7 +126,7 @@ export default function Dashboard({
               <BookOpen className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-bold font-display text-slate-950 tracking-tight">{courses.length}</p>
+          <p className="mt-2 text-2xl font-bold font-display text-slate-950 tracking-tight">{currentSemCourses.length}</p>
           <p className="mt-1 text-xs text-slate-500 font-medium">Kelas aktif semester ini</p>
         </button>
 
@@ -138,7 +143,7 @@ export default function Dashboard({
             </div>
           </div>
           <p className="mt-2 text-2xl font-bold font-display text-slate-950 tracking-tight">{totalActiveTasks}</p>
-          <p className="mt-1 text-xs text-amber-605 font-bold flex items-center gap-1">
+          <p className="mt-1 text-xs text-amber-600 font-bold flex items-center gap-1">
             <span>●</span> {tasks.filter(t => t.priority === 'Tinggi' && t.status !== 'Selesai').length} Prioritas Tinggi
           </p>
         </button>
@@ -190,7 +195,7 @@ export default function Dashboard({
         <div className="lg:col-span-3 rounded-xl border border-slate-200 bg-white p-6 space-y-4" id="dashboard-schedule-panel">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-indigo-650" />
+              <Calendar className="h-5 w-5 text-indigo-600" />
               <h2 className="font-display font-bold text-slate-900 tracking-tight">Jadwal Kuliah Mingguan</h2>
             </div>
             {/* Quick Day Selector pills */}
@@ -321,7 +326,7 @@ export default function Dashboard({
                         </span>
                       </div>
 
-                      <h4 className="font-bold text-slate-900 text-xs sm:text-sm group-hover:text-indigo-650 transition-colors leading-snug">
+                      <h4 className="font-bold text-slate-900 text-xs sm:text-sm group-hover:text-indigo-600 transition-colors leading-snug">
                         {t.title}
                       </h4>
                       <p className="text-[11px] text-slate-500 line-clamp-1">{t.description}</p>

@@ -82,7 +82,7 @@ export default function Header({
       {/* Header Actions */}
       <div className="flex items-center gap-4">
         {/* Simulation Date Picker (Aesthetic & highly functional) */}
-        <div className="hidden md:flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-1.5 text-xs text-slate-650 font-bold shadow-2xs">
+        <div className="hidden md:flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-1.5 text-xs text-slate-600 font-bold shadow-2xs">
           <Calendar className="h-4 w-4 text-indigo-600" />
           <span className="text-[11px]">Tanggal:</span>
           <input
@@ -98,7 +98,7 @@ export default function Header({
         <div className="relative">
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className={`relative rounded-xl border p-2 text-slate-650 transition ${
+            className={`relative rounded-xl border p-2 text-slate-600 transition ${
               isOpen ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-white hover:bg-slate-50 border-slate-200'
             }`}
             id="notification-bell-btn"
@@ -120,7 +120,7 @@ export default function Header({
               <div className="absolute right-0 mt-2.5 w-80 sm:w-85 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150" id="notification-pane">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                   <h3 className="font-display font-extrabold text-slate-900 text-xs flex items-center gap-1.5 uppercase tracking-wider">
-                    <Activity className="h-4 w-4 text-indigo-605" /> Sinyal Alarm Deadline
+                    <Activity className="h-4 w-4 text-indigo-600" /> Sinyal Alarm Deadline
                   </h3>
                   <span className="inline-flex rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-extrabold text-indigo-700 border border-indigo-100">
                     {alertTasks.length} Aktif

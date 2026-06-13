@@ -385,7 +385,7 @@ export default function Tugas({
                 <div className="pt-3.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   {/* Deadline date */}
                   <div className="space-y-1 bg-slate-50/50 p-2 rounded-lg border border-slate-100/60 flex-1">
-                    <div className="flex items-center gap-1.5 text-slate-650 font-bold text-[11px]">
+                    <div className="flex items-center gap-1.5 text-slate-600 font-bold text-[11px]">
                       <Calendar className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
                       <span>{formatIndonesianDate(t.deadline)}</span>
                     </div>
@@ -628,7 +628,7 @@ export default function Tugas({
                   onDeleteTask(taskToDelete.id);
                   setTaskToDelete(null);
                 }}
-                className="rounded-lg bg-rose-650 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 transition cursor-pointer animate-in zoom-in-50 duration-75"
+                className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 transition cursor-pointer animate-in zoom-in-50 duration-75"
               >
                 Hapus
               </button>

@@ -357,6 +357,16 @@ export default function App() {
   // Course CRUD Operations (backed by Firestore)
   const handleAddCourse = async (newCourse: Omit<Course, 'id'>) => {
     try {
+      // Check if a course with this code (case-insensitive) already exists to prevent duplicate entries
+      const existing = courses.find(c => c.code.trim().toUpperCase() === newCourse.code.trim().toUpperCase());
+      if (existing) {
+        await updateDoc(doc(db, 'workspaces', 'default', 'courses', existing.id), {
+          ...newCourse,
+          updatedAt: new Date().toISOString()
+        });
+        return;
+      }
+
       const id = `course_${Date.now()}`;
       await setDoc(doc(db, 'workspaces', 'default', 'courses', id), {
         ...newCourse,
@@ -531,7 +541,7 @@ export default function App() {
         <div className="p-6 border-t border-slate-100">
           <button
             onClick={handleResetData}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition text-[11px] font-bold text-slate-650 shadow-xs cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition text-[11px] font-bold text-slate-600 shadow-xs cursor-pointer"
             id="btn-reset-data"
           >
             <RotateCcw className="h-3.5 w-3.5 text-slate-450" /> Atur Ulang Data
@@ -572,6 +582,7 @@ export default function App() {
                 courses={courses}
                 tasks={tasks}
                 todayStr={simulationDate}
+                currentSemester={currentSemester}
                 onNavigate={setActiveTab}
                 onAddTaskClick={handleQuickAddTask}
                 onAddCourseClick={handleQuickAddCourse}
@@ -586,6 +597,7 @@ export default function App() {
                 onAddCourse={handleAddCourse}
                 onEditCourse={handleEditCourse}
                 onDeleteCourse={handleDeleteCourse}
+                currentSemester={currentSemester}
               />
             )}
 

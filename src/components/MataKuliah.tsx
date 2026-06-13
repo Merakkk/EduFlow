@@ -21,6 +21,7 @@ interface MataKuliahProps {
   onAddCourse: (course: Omit<Course, 'id'>) => void;
   onEditCourse: (id: string, updated: Partial<Course>) => void;
   onDeleteCourse: (id: string) => void;
+  currentSemester?: number;
 }
 
 export default function MataKuliah({
@@ -28,11 +29,37 @@ export default function MataKuliah({
   tasks,
   onAddCourse,
   onEditCourse,
-  onDeleteCourse
+  onDeleteCourse,
+  currentSemester
 }: MataKuliahProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [courseToDelete, setCourseToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  // Dynamic list of semesters in system
+  const existingSemsFromCourses = courses.map(c => c.semester || currentSemester || 5);
+  const maxSemesterInSystem = Math.max(
+    1,
+    currentSemester || 5,
+    ...existingSemsFromCourses
+  );
+  
+  const semestersList = Array.from({ length: maxSemesterInSystem }, (_, i) => i + 1);
+
+  // Filter state
+  const [selectedSemFilter, setSelectedSemFilter] = useState<number | 'all'>(currentSemester || 5);
+
+  // Sync state with parent currentSemester
+  React.useEffect(() => {
+    if (currentSemester) {
+      setSelectedSemFilter(currentSemester);
+    }
+  }, [currentSemester]);
+
+  // Filter courses based on selected semester
+  const filteredCourses = selectedSemFilter === 'all'
+    ? courses
+    : courses.filter(c => (c.semester || currentSemester || 5) === selectedSemFilter);
 
   // Form states
   const [code, setCode] = useState('');
@@ -43,6 +70,7 @@ export default function MataKuliah({
   const [timeStart, setTimeStart] = useState('08:00');
   const [timeEnd, setTimeEnd] = useState('09:40');
   const [selectedColor, setSelectedColor] = useState('blue');
+  const [courseSemester, setCourseSemester] = useState<number>(5);
   const [error, setError] = useState('');
 
   const openAddModal = () => {
@@ -55,6 +83,9 @@ export default function MataKuliah({
     setTimeStart('08:00');
     setTimeEnd('09:40');
     setSelectedColor('blue');
+    setCourseSemester(
+      typeof selectedSemFilter === 'number' ? selectedSemFilter : (currentSemester || 5)
+    );
     setError('');
     setIsModalOpen(true);
   };
@@ -69,6 +100,7 @@ export default function MataKuliah({
     setTimeStart(c.timeStart);
     setTimeEnd(c.timeEnd);
     setSelectedColor(c.color);
+    setCourseSemester(c.semester || currentSemester || 5);
     setError('');
     setIsModalOpen(true);
   };
@@ -94,7 +126,10 @@ export default function MataKuliah({
       day,
       timeStart,
       timeEnd,
-      color: selectedColor
+      color: selectedColor,
+      semester: courseSemester,
+      sks: editingCourse ? (editingCourse.sks !== undefined ? editingCourse.sks : 3) : 3,
+      grade: editingCourse ? (editingCourse.grade || '-') : '-'
     };
 
     if (editingCourse) {
@@ -131,10 +166,69 @@ export default function MataKuliah({
         </button>
       </div>
 
+      {/* Semester Filter Tabs */}
+      {courses.length > 0 && (
+        <div className="bg-slate-50 border border-slate-150 rounded-2xl p-2.5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-3xs" id="semester-tabs-container">
+          <div className="flex flex-wrap gap-1.5 items-center">
+            <button
+              onClick={() => setSelectedSemFilter('all')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                selectedSemFilter === 'all'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-600'
+              }`}
+            >
+              Semua Semester
+            </button>
+            
+            <div className="h-4 w-[1px] bg-slate-200 mx-1 hidden sm:block"></div>
+
+            {semestersList.map((sem) => {
+              const isActive = selectedSemFilter === sem;
+              const isCurrent = currentSemester === sem;
+              const semCoursesCount = courses.filter(c => (c.semester || currentSemester || 5) === sem).length;
+
+              return (
+                <button
+                  key={sem}
+                  onClick={() => setSelectedSemFilter(sem)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-100'
+                      : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-600'
+                  }`}
+                >
+                  <span>Sem {sem}</span>
+                  {semCoursesCount > 0 && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
+                      isActive ? 'bg-indigo-800 text-indigo-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
+                    }`}>
+                      {semCoursesCount}
+                    </span>
+                  )}
+                  {isCurrent && (
+                    <span className={`text-[8px] font-black uppercase tracking-wider px-1 py-0.5 rounded ${
+                      isActive ? 'bg-indigo-900 text-indigo-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-150'
+                    }`}>
+                      Aktif
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          
+          <span className="text-[11px] font-bold text-slate-500 md:mr-2">
+            Menampilkan {filteredCourses.length} dari {courses.length} mata kuliah
+          </span>
+        </div>
+      )}
+
       {/* Grid List */}
       {courses.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="courses-grid-layout">
-          {courses.map((c) => {
+        filteredCourses.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="courses-grid-layout">
+            {filteredCourses.map((c) => {
             const preset = COLOR_PRESETS[c.color] || COLOR_PRESETS.blue;
             // Filter tasks under this course
             const courseTasks = tasks.filter((t) => t.courseId === c.id);
@@ -153,9 +247,14 @@ export default function MataKuliah({
                 <div className="space-y-4">
                   {/* Card Badge & Code Header */}
                   <div className="flex items-center justify-between gap-3">
-                    <span className={`inline-block text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full ${preset.badgeBg}`}>
-                      {c.code}
-                    </span>
+                    <div className="flex gap-1.5 items-center">
+                      <span className={`inline-block text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full ${preset.badgeBg}`}>
+                        {c.code}
+                      </span>
+                      <span className="inline-block text-[10px] font-extrabold tracking-wider bg-slate-100 border border-slate-200 text-slate-600 px-2.5 py-1 rounded-full">
+                        Sem {c.semester || 5}
+                      </span>
+                    </div>
                     
                     {/* Action buttons panel */}
                     <div className="flex items-center gap-1 opacity-80 hover:opacity-100 transition-opacity">
@@ -178,7 +277,7 @@ export default function MataKuliah({
 
                   {/* Title and Lecturer */}
                   <div>
-                    <h3 className="font-display font-bold text-slate-900 text-base tracking-tight group-hover:text-indigo-605 transition duration-150 leading-snug">
+                    <h3 className="font-display font-bold text-slate-900 text-base tracking-tight group-hover:text-indigo-600 transition duration-150 leading-snug">
                       {c.name}
                     </h3>
                     <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-2 font-semibold">
@@ -233,6 +332,22 @@ export default function MataKuliah({
           })}
         </div>
       ) : (
+        <div className="flex flex-col items-center justify-center py-16 px-5 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-205" id="empty-semester-courses">
+          <div className="rounded-full bg-indigo-50 p-4 text-indigo-500 mb-3">
+            <BookOpen className="h-8 w-8" />
+          </div>
+          <h3 className="font-display font-bold text-slate-800 text-base">Semester {selectedSemFilter} Kosong</h3>
+          <p className="text-xs text-slate-550 mt-1 max-w-sm leading-relaxed">
+            Belum ada mata kuliah yang terdaftar khusus untuk Semester {selectedSemFilter}. Silakan daftarkan mata kuliah baru untuk semester ini!
+          </p>
+          <button
+            onClick={openAddModal}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 cursor-pointer"
+          >
+            <Plus className="h-4 w-4" /> Daftarkan di Semester {selectedSemFilter}
+          </button>
+        </div>
+      )) : (
         <div className="flex flex-col items-center justify-center py-16 px-5 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200" id="empty-courses">
           <div className="rounded-full bg-indigo-50 p-4 text-indigo-500 mb-3">
             <BookOpen className="h-8 w-8" />
@@ -316,7 +431,7 @@ export default function MataKuliah({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-slate-600">Ruang / Platform <span className="text-red-500">*</span></label>
                   <input
@@ -339,6 +454,19 @@ export default function MataKuliah({
                   >
                     {DAYS_OF_WEEK.map((d) => (
                       <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600">Semester <span className="text-red-500">*</span></label>
+                  <select
+                    value={courseSemester}
+                    onChange={(e) => setCourseSemester(parseInt(e.target.value, 10))}
+                    className="w-full rounded-lg border border-slate-200 bg-white hover:border-slate-350 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50 focus:outline-none px-3 py-2 text-xs font-bold transition-all bg-white cursor-pointer"
+                  >
+                    {Array.from({ length: 14 }, (_, i) => i + 1).map((sem) => (
+                      <option key={sem} value={sem}>Semester {sem}</option>
                     ))}
                   </select>
                 </div>
@@ -382,7 +510,7 @@ export default function MataKuliah({
                         className={`group relative h-8 px-3 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                           selected
                             ? `${preset.badgeBg} ${preset.border} scale-[1.02] ring-4 ring-indigo-100/60`
-                            : 'bg-white border-slate-200 text-slate-605 hover:bg-slate-50'
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                       >
                         <span className="flex items-center gap-1.5">
@@ -442,7 +570,7 @@ export default function MataKuliah({
                   onDeleteCourse(courseToDelete.id);
                   setCourseToDelete(null);
                 }}
-                className="rounded-lg bg-rose-650 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 transition cursor-pointer animate-in zoom-in-50 duration-75"
+                className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 transition cursor-pointer animate-in zoom-in-50 duration-75"
               >
                 Hapus
               </button>
