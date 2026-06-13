@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "Workspace": {
+      "title": "Workspace",
+      "description": "Shared workspace configuration and settings",
+      "type": "object",
+      "properties": {
+        "currentSemester": { "type": "integer" },
+        "semesterGPAs": { "type": "object" },
+        "simulationDate": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["currentSemester", "semesterGPAs", "simulationDate"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "A single academic course",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "lecturer": { "type": "string" },
+        "room": { "type": "string" },
+        "day": { "type": "string" },
+        "timeStart": { "type": "string" },
+        "timeEnd": { "type": "string" },
+        "color": { "type": "string" },
+        "sks": { "type": "integer" },
+        "semester": { "type": "integer" },
+        "grade": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["code", "name", "day", "timeStart", "timeEnd"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "An academic task or assignment",
+      "type": "object",
+      "properties": {
+        "courseId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "deadline": { "type": "string" },
+        "priority": { "type": "string" },
+        "status": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["courseId", "title", "deadline", "priority", "status"]
+    }
+  },
+  "firestore": {
+    "/workspaces/{workspaceId}": {
+      "schema": "Workspace",
+      "description": "Workspace settings"
+    },
+    "/workspaces/{workspaceId}/courses/{courseId}": {
+      "schema": "Course",
+      "description": "Courses within a workspace"
+    },
+    "/workspaces/{workspaceId}/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Tasks within a workspace"
+    }
+  }
+}

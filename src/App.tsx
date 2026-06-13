@@ -7,6 +7,16 @@ import MataKuliah from './components/MataKuliah';
 import Tugas from './components/Tugas';
 import Kalender from './components/Kalender';
 import Semester from './components/Semester';
+import { 
+  doc, 
+  collection, 
+  onSnapshot, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  getDoc,
+} from 'firebase/firestore';
+import { db, OperationType, handleFirestoreError } from './firebase';
 
 import { 
   LayoutDashboard, 
@@ -38,50 +48,8 @@ export default function App() {
   });
 
   // GPA / IPK dynamic state
-  const [semesterGPAs, setSemesterGPAs] = useState<Record<number, number>>(() => {
-    try {
-      const saved = localStorage.getItem('rancang_belajar_semester_gpas');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.warn("localStorage 'rancang_belajar_semester_gpas' corrupted, returning initial values", e);
-    }
-    return { 1: 3.75, 2: 3.80, 3: 3.85, 4: 3.90, 5: 3.82 };
-  });
-
-  const [currentSemester, setCurrentSemester] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem('rancang_belajar_current_semester');
-      if (saved) {
-        const parsed = parseInt(saved, 10);
-        return isNaN(parsed) ? 5 : parsed;
-      }
-    } catch (e) {
-      console.warn("localStorage 'rancang_belajar_current_semester' corrupted, returning initial values", e);
-    }
-    return 5;
-  });
-
-  // Sync GPA state changes with localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('rancang_belajar_semester_gpas', JSON.stringify(semesterGPAs));
-    } catch (e) {
-      console.error("Failed to save semesterGPAs to localStorage", e);
-    }
-  }, [semesterGPAs]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('rancang_belajar_current_semester', currentSemester.toString());
-    } catch (e) {
-      console.error("Failed to save currentSemester to localStorage", e);
-    }
-  }, [currentSemester]);
+  const [semesterGPAs, setSemesterGPAs] = useState<Record<number, number>>({ 1: 3.75, 2: 3.80, 3: 3.85, 4: 3.90, 5: 3.82 });
+  const [currentSemester, setCurrentSemester] = useState<number>(5);
 
   // Load state from localStorage with fallback to initial data
   const [courses, setCourses] = useState<Course[]>(() => {
@@ -92,7 +60,7 @@ export default function App() {
         if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
-      console.warn("localStorage 'rancang_belajar_courses' corrupted, returning initial values", e);
+      console.warn("localStorage fallback key corrupted", e);
     }
     return INITIAL_COURSES;
   });
@@ -105,7 +73,7 @@ export default function App() {
         if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
-      console.warn("localStorage 'rancang_belajar_tasks' corrupted, returning initial values", e);
+      console.warn("localStorage fallback tasks corrupted", e);
     }
     return INITIAL_TASKS;
   });
@@ -114,108 +82,273 @@ export default function App() {
   const [importQuickTask, setImportQuickTask] = useState<boolean>(false);
   const [importQuickCourse, setImportQuickCourse] = useState<boolean>(false);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // Sync state changes with localStorage
+  // Firestore real-time synchronization hook
   useEffect(() => {
-    try {
-      localStorage.setItem('rancang_belajar_courses', JSON.stringify(courses));
-    } catch (e) {
-      console.error("Failed to save courses to localStorage", e);
-    }
-  }, [courses]);
+    let unsubWorkspace: (() => void) | null = null;
+    let unsubCourses: (() => void) | null = null;
+    let unsubTasks: (() => void) | null = null;
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('rancang_belajar_tasks', JSON.stringify(tasks));
-    } catch (e) {
-      console.error("Failed to save tasks to localStorage", e);
-    }
-  }, [tasks]);
-
-  // Real-time synchronization across views/tabs/frames sharing the same localStorage
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (!e.key) return;
+    const setupFirestoreSync = async () => {
       try {
-        if (e.key === 'rancang_belajar_courses' && e.newValue) {
-          const parsed = JSON.parse(e.newValue);
-          if (Array.isArray(parsed)) {
-            setCourses(prev => JSON.stringify(prev) !== e.newValue ? parsed : prev);
+        const workspaceRef = doc(db, 'workspaces', 'default');
+        const wsSnap = await getDoc(workspaceRef);
+
+        if (!wsSnap.exists()) {
+          // No workspace exists in Firestore. Seed default data once.
+          await setDoc(workspaceRef, {
+            currentSemester: 5,
+            semesterGPAs: { 1: 3.75, 2: 3.80, 3: 3.85, 4: 3.90, 5: 3.82 },
+            simulationDate: getTodayDateString(),
+            seeded: true,
+            updatedAt: new Date().toISOString()
+          });
+
+          // Seed courses
+          for (const course of INITIAL_COURSES) {
+            await setDoc(doc(db, 'workspaces', 'default', 'courses', course.id), {
+              code: course.code,
+              name: course.name,
+              lecturer: course.lecturer || '',
+              room: course.room || '',
+              day: course.day,
+              timeStart: course.timeStart,
+              timeEnd: course.timeEnd,
+              color: course.color,
+              sks: course.sks || 0,
+              semester: course.semester || 1,
+              grade: course.grade || '',
+              updatedAt: new Date().toISOString()
+            });
+          }
+
+          // Seed tasks
+          for (const t of INITIAL_TASKS) {
+            await setDoc(doc(db, 'workspaces', 'default', 'tasks', t.id), {
+              courseId: t.courseId,
+              title: t.title,
+              description: t.description || '',
+              deadline: t.deadline,
+              priority: t.priority,
+              status: t.status,
+              updatedAt: new Date().toISOString()
+            });
           }
         }
-        if (e.key === 'rancang_belajar_tasks' && e.newValue) {
-          const parsed = JSON.parse(e.newValue);
-          if (Array.isArray(parsed)) {
-            setTasks(prev => JSON.stringify(prev) !== e.newValue ? parsed : prev);
+
+        // Live Workspace document listener
+        unsubWorkspace = onSnapshot(workspaceRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.currentSemester !== undefined) setCurrentSemester(data.currentSemester);
+            if (data.semesterGPAs !== undefined) setSemesterGPAs(data.semesterGPAs);
+            if (data.simulationDate !== undefined) setSimulationDate(data.simulationDate);
           }
-        }
-        if (e.key === 'rancang_belajar_semester_gpas' && e.newValue) {
-          const parsed = JSON.parse(e.newValue);
-          if (parsed && typeof parsed === 'object') {
-            setSemesterGPAs(prev => JSON.stringify(prev) !== e.newValue ? parsed : prev);
-          }
-        }
-        if (e.key === 'rancang_belajar_current_semester' && e.newValue) {
-          const parsed = parseInt(e.newValue, 10);
-          if (!isNaN(parsed)) {
-            setCurrentSemester(prev => prev !== parsed ? parsed : prev);
-          }
-        }
+          setLoading(false);
+        }, (err) => {
+          handleFirestoreError(err, OperationType.GET, 'workspaces/default');
+          setLoading(false);
+        });
+
+        // Live Courses collection listener
+        const coursesColRef = collection(db, 'workspaces', 'default', 'courses');
+        unsubCourses = onSnapshot(coursesColRef, (colSnap) => {
+          const list: Course[] = [];
+          colSnap.forEach((docSnap) => {
+            const data = docSnap.data();
+            list.push({
+              id: docSnap.id,
+              code: data.code,
+              name: data.name,
+              lecturer: data.lecturer || '',
+              room: data.room || '',
+              day: data.day,
+              timeStart: data.timeStart,
+              timeEnd: data.timeEnd,
+              color: data.color,
+              sks: data.sks || 0,
+              semester: data.semester || 1,
+              grade: data.grade || '',
+            });
+          });
+          setCourses(list);
+          try {
+            localStorage.setItem('rancang_belajar_courses', JSON.stringify(list));
+          } catch (_) {}
+        }, (err) => {
+          handleFirestoreError(err, OperationType.LIST, 'workspaces/default/courses');
+        });
+
+        // Live Tasks collection listener
+        const tasksColRef = collection(db, 'workspaces', 'default', 'tasks');
+        unsubTasks = onSnapshot(tasksColRef, (colSnap) => {
+          const list: Task[] = [];
+          colSnap.forEach((docSnap) => {
+            const data = docSnap.data();
+            list.push({
+              id: docSnap.id,
+              courseId: data.courseId,
+              title: data.title,
+              description: data.description || '',
+              deadline: data.deadline,
+              priority: data.priority,
+              status: data.status,
+            });
+          });
+          setTasks(list);
+          try {
+            localStorage.setItem('rancang_belajar_tasks', JSON.stringify(list));
+          } catch (_) {}
+        }, (err) => {
+          handleFirestoreError(err, OperationType.LIST, 'workspaces/default/tasks');
+        });
+
       } catch (err) {
-        console.error("Error synchronizing localStorage changes", err);
+        console.error("Firestore setup error:", err);
+        setLoading(false);
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
+    setupFirestoreSync();
+
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      if (unsubWorkspace) unsubWorkspace();
+      if (unsubCourses) unsubCourses();
+      if (unsubTasks) unsubTasks();
     };
   }, []);
 
-  // Task Crud Operations
-  const handleAddTask = (newTask: Omit<Task, 'id'>) => {
-    const taskWithId: Task = {
-      ...newTask,
-      id: `task_${Date.now()}`
-    };
-    setTasks(prev => [taskWithId, ...prev]);
+  // Sync back state changes locally for instant page cache rendering
+  useEffect(() => {
+    try {
+      localStorage.setItem('rancang_belajar_semester_gpas', JSON.stringify(semesterGPAs));
+    } catch (_) {}
+  }, [semesterGPAs]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('rancang_belajar_current_semester', currentSemester.toString());
+    } catch (_) {}
+  }, [currentSemester]);
+
+  // Firestore update helper functions
+  const handleSetSimulationDate = async (newVal: string) => {
+    try {
+      await updateDoc(doc(db, 'workspaces', 'default'), {
+        simulationDate: newVal,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, 'workspaces/default');
+    }
   };
 
-  const handleEditTask = (id: string, updated: Partial<Task>) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updated } : t));
+  const handleSetCurrentSemester = async (newVal: number) => {
+    try {
+      await updateDoc(doc(db, 'workspaces', 'default'), {
+        currentSemester: newVal,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, 'workspaces/default');
+    }
   };
 
-  const handleDeleteTask = (id: string) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
+  const handleSetSemesterGPAs = async (newVal: Record<number, number> | ((prev: Record<number, number>) => Record<number, number>)) => {
+    try {
+      const resolvedVal = typeof newVal === 'function' ? newVal(semesterGPAs) : newVal;
+      await updateDoc(doc(db, 'workspaces', 'default'), {
+        semesterGPAs: resolvedVal,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, 'workspaces/default');
+    }
   };
 
-  const handleQuickToggleTaskStatus = (id: string) => {
-    setTasks(prev => prev.map(t => {
-      if (t.id === id) {
+  // Task CRUD Operations (backed by Firestore)
+  const handleAddTask = async (newTask: Omit<Task, 'id'>) => {
+    try {
+      const id = `task_${Date.now()}`;
+      await setDoc(doc(db, 'workspaces', 'default', 'tasks', id), {
+        ...newTask,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      handleFirestoreError(e, OperationType.CREATE, 'workspaces/default/tasks');
+    }
+  };
+
+  const handleEditTask = async (id: string, updated: Partial<Task>) => {
+    try {
+      await updateDoc(doc(db, 'workspaces', 'default', 'tasks', id), {
+        ...updated,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `workspaces/default/tasks/${id}`);
+    }
+  };
+
+  const handleDeleteTask = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'workspaces', 'default', 'tasks', id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, `workspaces/default/tasks/${id}`);
+    }
+  };
+
+  const handleQuickToggleTaskStatus = async (id: string) => {
+    try {
+      const t = tasks.find(item => item.id === id);
+      if (t) {
         const nextStatus = t.status === 'Selesai' ? 'Belum Mulai' : 'Selesai';
-        return { ...t, status: nextStatus };
+        await updateDoc(doc(db, 'workspaces', 'default', 'tasks', id), {
+          status: nextStatus,
+          updatedAt: new Date().toISOString()
+        });
       }
-      return t;
-    }));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `workspaces/default/tasks/${id}`);
+    }
   };
 
-  // Course Crud Operations
-  const handleAddCourse = (newCourse: Omit<Course, 'id'>) => {
-    const courseWithId: Course = {
-      ...newCourse,
-      id: `course_${Date.now()}`
-    };
-    setCourses(prev => [...prev, courseWithId]);
+  // Course CRUD Operations (backed by Firestore)
+  const handleAddCourse = async (newCourse: Omit<Course, 'id'>) => {
+    try {
+      const id = `course_${Date.now()}`;
+      await setDoc(doc(db, 'workspaces', 'default', 'courses', id), {
+        ...newCourse,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      handleFirestoreError(e, OperationType.CREATE, 'workspaces/default/courses');
+    }
   };
 
-  const handleEditCourse = (id: string, updated: Partial<Course>) => {
-    setCourses(prev => prev.map(c => c.id === id ? { ...c, ...updated } : c));
+  const handleEditCourse = async (id: string, updated: Partial<Course>) => {
+    try {
+      await updateDoc(doc(db, 'workspaces', 'default', 'courses', id), {
+        ...updated,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `workspaces/default/courses/${id}`);
+    }
   };
 
-  const handleDeleteCourse = (id: string) => {
-    setCourses(prev => prev.filter(c => c.id !== id));
-    // Also cleanup task references or set to blank
-    setTasks(prev => prev.filter(t => t.courseId !== id));
+  const handleDeleteCourse = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'workspaces', 'default', 'courses', id));
+      // Clean up linked tasks
+      const linkedTasks = tasks.filter(t => t.courseId === id);
+      for (const t of linkedTasks) {
+        await deleteDoc(doc(db, 'workspaces', 'default', 'tasks', t.id));
+      }
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, `workspaces/default/courses/${id}`);
+    }
   };
 
   // Reset to sample initial state
@@ -234,7 +367,7 @@ export default function App() {
     setImportQuickCourse(true);
   };
 
-  // Active state indicator
+  // Active state indicators
   const pendingTasksCount = tasks.filter(t => t.status !== 'Selesai').length;
 
   // GPA calculation up to currentSemester
@@ -244,6 +377,19 @@ export default function App() {
   const cumulativeIPK = activeGPAs.length > 0
     ? (activeGPAs.reduce((sum: number, g: number) => sum + g, 0) / activeGPAs.length).toFixed(2)
     : "0.00";
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-3 h-3 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-3 h-3 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        </div>
+        <p className="text-xs font-bold text-slate-500 font-sans tracking-wide">Menghubungkan dengan EduFlow Cloud Sync...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/50 text-gray-800 font-sans flex flex-col md:flex-row overflow-hidden" id="rancang-belajar-main-pane">
@@ -362,7 +508,7 @@ export default function App() {
           tasks={tasks}
           todayStr={simulationDate}
           onQuickToggleTaskStatus={handleQuickToggleTaskStatus}
-          onSetSimulationDate={setSimulationDate}
+          onSetSimulationDate={handleSetSimulationDate}
         />
 
         {/* Responsive Floating Simulation date for Mobile layouts */}
@@ -371,7 +517,7 @@ export default function App() {
           <input
             type="date"
             value={simulationDate}
-            onChange={(e) => setSimulationDate(e.target.value)}
+            onChange={(e) => handleSetSimulationDate(e.target.value)}
             className="border bg-white rounded px-2 py-0.5 border-indigo-200 text-indigo-800 font-mono text-xs focus:outline-none"
           />
         </div>
@@ -432,9 +578,9 @@ export default function App() {
                 onEditCourse={handleEditCourse}
                 onDeleteCourse={handleDeleteCourse}
                 currentSemester={currentSemester}
-                setCurrentSemester={setCurrentSemester}
+                setCurrentSemester={handleSetCurrentSemester}
                 semesterGPAs={semesterGPAs}
-                setSemesterGPAs={setSemesterGPAs}
+                setSemesterGPAs={handleSetSemesterGPAs}
               />
             )}
           </div>
@@ -524,17 +670,63 @@ export default function App() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setCourses(INITIAL_COURSES);
-                  setTasks(INITIAL_TASKS);
-                  setSimulationDate(getTodayDateString());
-                  setActiveTab('dashboard');
-                  const defaultGPAs = { 1: 3.75, 2: 3.80, 3: 3.85, 4: 3.90, 5: 3.82 };
-                  setSemesterGPAs(defaultGPAs);
-                  setCurrentSemester(5);
-                  localStorage.removeItem('rancang_belajar_semester_gpas');
-                  localStorage.removeItem('rancang_belajar_current_semester');
+                onClick={async () => {
                   setShowResetConfirm(false);
+                  setLoading(true);
+                  try {
+                    const workspaceRef = doc(db, 'workspaces', 'default');
+                    await setDoc(workspaceRef, {
+                      currentSemester: 5,
+                      semesterGPAs: { 1: 3.75, 2: 3.80, 3: 3.85, 4: 3.90, 5: 3.82 },
+                      simulationDate: getTodayDateString(),
+                      seeded: true,
+                      updatedAt: new Date().toISOString()
+                    });
+
+                    // Clear old entries from Firestore
+                    for (const c of courses) {
+                      await deleteDoc(doc(db, 'workspaces', 'default', 'courses', c.id));
+                    }
+                    for (const t of tasks) {
+                      await deleteDoc(doc(db, 'workspaces', 'default', 'tasks', t.id));
+                    }
+
+                    // Write initial seed to Firestore
+                    for (const course of INITIAL_COURSES) {
+                      await setDoc(doc(db, 'workspaces', 'default', 'courses', course.id), {
+                        code: course.code,
+                        name: course.name,
+                        lecturer: course.lecturer || '',
+                        room: course.room || '',
+                        day: course.day,
+                        timeStart: course.timeStart,
+                        timeEnd: course.timeEnd,
+                        color: course.color,
+                        sks: course.sks || 0,
+                        semester: course.semester || 1,
+                        grade: course.grade || '',
+                        updatedAt: new Date().toISOString()
+                      });
+                    }
+
+                    for (const t of INITIAL_TASKS) {
+                      await setDoc(doc(db, 'workspaces', 'default', 'tasks', t.id), {
+                        courseId: t.courseId,
+                        title: t.title,
+                        description: t.description || '',
+                        deadline: t.deadline,
+                        priority: t.priority,
+                        status: t.status,
+                        updatedAt: new Date().toISOString()
+                      });
+                    }
+
+                    setActiveTab('dashboard');
+                  } catch (err) {
+                    console.error("Failed to reset Firestore data:", err);
+                  } finally {
+                    setLoading(false);
+                  }
                 }}
                 className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition cursor-pointer animate-in zoom-in-50 duration-75"
               >

@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global safety net catches all undefined paths.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Workspace shape validation helper
+    function isValidWorkspace(data) {
+      return data.keys().hasAll(['currentSemester', 'semesterGPAs', 'simulationDate'])
+        && data.keys().size() <= 6
+        && data.currentSemester is int
+        && data.currentSemester >= 1
+        && data.currentSemester <= 8
+        && data.semesterGPAs is map
+        && data.simulationDate is string
+        && data.simulationDate.size() <= 20;
+    }
+
+    // Course shape validation helper
+    function isValidCourse(data) {
+      return data.keys().hasAll(['code', 'name', 'lecturer', 'room', 'day', 'timeStart', 'timeEnd', 'color'])
+        && data.code is string && data.code.size() <= 20
+        && data.name is string && data.name.size() <= 100
+        && data.lecturer is string && data.lecturer.size() <= 100
+        && data.room is string && data.room.size() <= 100
+        && data.day is string && data.day.size() <= 20
+        && data.timeStart is string && data.timeStart.size() <= 10
+        && data.timeEnd is string && data.timeEnd.size() <= 10
+        && data.color is string && data.color.size() <= 20;
+    }
+
+    // Task shape validation helper
+    function isValidTask(data) {
+      return data.keys().hasAll(['courseId', 'title', 'description', 'deadline', 'priority', 'status'])
+        && data.courseId is string && data.courseId.size() <= 50
+        && data.title is string && data.title.size() <= 200
+        && data.description is string && data.description.size() <= 1000
+        && data.deadline is string && data.deadline.size() <= 20
+        && data.priority is string && (data.priority == 'Tinggi' || data.priority == 'Sedang' || data.priority == 'Rendah')
+        && data.status is string && (data.status == 'Belum Mulai' || data.status == 'Proses' || data.status == 'Selesai');
+    }
+
+    // Match rules
+    match /workspaces/{workspaceId} {
+      allow get: if isValidId(workspaceId);
+      allow create: if isValidId(workspaceId) && isValidWorkspace(incoming());
+      allow update: if isValidId(workspaceId) && isValidWorkspace(incoming());
+      allow delete: if false; // prevent total deletion from client
+
+      match /courses/{courseId} {
+        allow list, get: if isValidId(workspaceId);
+        allow create: if isValidId(workspaceId) && isValidId(courseId) && isValidCourse(incoming());
+        allow update: if isValidId(workspaceId) && isValidId(courseId) && isValidCourse(incoming());
+        allow delete: if isValidId(workspaceId) && isValidId(courseId);
+      }
+
+      match /tasks/{taskId} {
+        allow list, get: if isValidId(workspaceId);
+        allow create: if isValidId(workspaceId) && isValidId(taskId) && isValidTask(incoming());
+        allow update: if isValidId(workspaceId) && isValidId(taskId) && isValidTask(incoming());
+        allow delete: if isValidId(workspaceId) && isValidId(taskId);
+      }
+    }
+  }
+}
