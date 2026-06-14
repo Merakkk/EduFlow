@@ -74,4 +74,53 @@ Sekarang proyek Anda sepenuhnya aktif secara lokal bersama fitur **Hot Module Re
 - **Melihat Perubahan**: Perubahan akan langsung tercermin secara instan pada browser Anda.
 - **Membangun Aplikasi Produksi**: Jika aplikasi Anda siap untuk dideploy, jalankan perintah `npm run build` untuk menghasilkan berkas statis siap pakai yang terletak di folder `/dist`.
 
+---
+
+## 7. Solusi Eror `auth/unauthorized-domain` Saat Deploy Mandiri
+
+Jika Anda mendeploy aplikasi ini ke hosting sendiri (seperti Vercel, Netlify, Cloud Run, dll.) dan mendapatkan eror **Gagal Otentikasi: Firebase Error (auth/unauthorized-domain)** ketika login Google:
+
+### Mengapa Eror Ini Terjadi?
+Proyek Firebase bawaan (`pelagic-brand-w53sn`) adalah proyek yang **dikelola otomatis secara internal oleh platform Google AI Studio (sandbox)**. 
+- Karena proyek ini dikelola sistem AI Studio, Anda **tidak memiliki akses Owner/Admin** di Konsol Firebase untuk masuk ke tab Settings dan menambahkan domain rilis Anda sendiri.
+- Google OAuth mewajibkan setiap domain web yang melakukan autentikasi terdaftar di daftar **Authorized Domains (Domain Resmi)** milik Firebase demi alasan keamanan keamanan (menghindari pencurian identitas / spoofing).
+
+### Bagaimana Cara Mengatasinya?
+
+Anda hanya perlu menggunakan **Proyek Firebase Anda Sendiri** (100% Gratis). Caranya sangatlah mudah:
+
+1. **Buat Proyek Firebase Baru**:
+   - Buka [Firebase Console](https://console.firebase.google.com/).
+   - Klik **Add Project** (Tambah Proyek), masukkan nama proyek baru (misal: `eduflow-saya`), lalu selesaikan langkah pembuatannya.
+   - Karena Anda yang membuatnya, Anda adalah **Full Owner (Pemilik Utama)** dan memiliki hak cipta admin penuh!
+
+2. **Aktifkan Autentikasi**:
+   - Di panel kiri, masuk ke menu **Authentication** (Otentikasi).
+   - Klik tab **Sign-in method** di atas.
+   - Aktifkan provider **Google** dan provider **Anonymous (Tamu)**.
+
+3. **Daftarkan Domain Deploy Anda (Authorized Domains)**:
+   - Di halaman **Authentication**, masuk ke tab **Settings** (Pengaturan) di bagian atas.
+   - Di menu sebelah kiri bawah, cari **Authorized Domains** (Domain resmi).
+   - Klik **Add Domain** dan masukkan nama domain hosting mandiri Anda (misalnya: `eduflow-saya.vercel.app` atau `nama-layanan.run.app`).
+
+4. **Dapatkan Config Proyek Baru Anda**:
+   - Masuk ke **Project settings** (Ikon roda gigi di samping "Project Overview" di pojok kiri atas).
+   - Scroll ke bagian bawah di tab **General**, lalu di bagian *Your apps*, pilih platform ikon **Web (`</>`)** untuk membuat aplikasi web baru.
+   - Masukkan nama aplikasi (misal `EduFlow Web`) lalu daftarkan.
+   - Salin objek konfigurasi `firebaseConfig` yang muncul, yang berisi nilai `apiKey`, `authDomain`, `projectId`, `appId`, dll.
+
+5. **Hubungkan dengan Aplikasi Anda (Tanpa Ubah Kode)**:
+   - Kami sudah memodifikasi berkas `/src/firebase.ts` agar mendukung penimpaan konfigurasi lewat **Environment Variables**.
+   - Anda cukup membuat berkas `.env` di folder lokal Anda (atau masukkan variabel ini ke Settings Environment Variables di dashboard Vercel/Netlify Anda) dengan format berikut:
+     ```env
+     VITE_FIREBASE_PROJECT_ID="project-id-anda"
+     VITE_FIREBASE_APP_ID="app-id-anda"
+     VITE_FIREBASE_API_KEY="api-key-anda"
+     VITE_FIREBASE_AUTH_DOMAIN="id-proyek-anda.firebaseapp.com"
+     VITE_FIREBASE_STORAGE_BUCKET="id-proyek-anda.firebasestorage.app"
+     VITE_FIREBASE_MESSAGING_SENDER_ID="sender-id-anda"
+     ```
+   - Aplikasi otomatis akan beralih menggunakan basis data Firebase milik Anda sendiri tanpa merusak kode bawaan!
+
 Selamat mencoba dan mengembangkan aplikasi Anda lebih jauh lewat Visual Studio Code! 🚀
