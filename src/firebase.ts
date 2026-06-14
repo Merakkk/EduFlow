@@ -4,12 +4,14 @@ import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Mengizinkan penimpaan (override) via environment variables agar mudah dideploy di hosting sendiri (Vercel, Netlify, VS Code lokal, dll.)
+const isCustomFirebase = !!(import.meta as any).env.VITE_FIREBASE_PROJECT_ID;
+
 const config = {
   projectId: (import.meta as any).env.VITE_FIREBASE_PROJECT_ID || firebaseConfig.projectId,
   appId: (import.meta as any).env.VITE_FIREBASE_APP_ID || firebaseConfig.appId,
   apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey,
   authDomain: (import.meta as any).env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
-  firestoreDatabaseId: (import.meta as any).env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfig.firestoreDatabaseId,
+  firestoreDatabaseId: (import.meta as any).env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || (isCustomFirebase ? "(default)" : firebaseConfig.firestoreDatabaseId),
   storageBucket: (import.meta as any).env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket,
   messagingSenderId: (import.meta as any).env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfig.messagingSenderId,
 };
