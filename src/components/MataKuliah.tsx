@@ -21,6 +21,47 @@ import {
   Check
 } from 'lucide-react';
 
+const compressImage = (dataUrl: string, maxWidth = 1500, maxHeight = 1500): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.src = dataUrl;
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height); // Ensure no transparency issue for raw PNGs
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        resolve(compressedDataUrl);
+      } else {
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => {
+      resolve(dataUrl);
+    };
+  });
+};
+
 interface MataKuliahProps {
   courses: Course[];
   tasks: Task[];
@@ -100,23 +141,47 @@ export default function MataKuliah({
     setAnalyzerError(null);
 
     try {
+      // Compress image before sending to avoid payload limits and speed up networks
+      const compressedImage = await compressImage(uploadPreview);
+
       const res = await fetch('/api/parse-schedule', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image: uploadPreview,
-          mimeType: uploadFile?.type || 'image/png'
+          image: compressedImage,
+          mimeType: 'image/jpeg'
         })
       });
 
+      let responseText = '';
+      try {
+        responseText = await res.text();
+      } catch (_) {}
+
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Gagal memproses gambar jadwal.');
+        let errText = 'Gagal memproses gambar jadwal.';
+        try {
+          const errData = JSON.parse(responseText);
+          errText = errData.error || errText;
+        } catch (_) {
+          if (responseText.includes('413') || responseText.toLowerCase().includes('too large')) {
+            errText = 'Ukuran berkas gambar terlalu besar dari batas server. Silakan gunakan tangkapan layar yang berkasnya lebih kecil atau terkompresi.';
+          } else {
+            errText = responseText.slice(0, 140) || `Gagal memproses gambar jadwal (HTTP ${res.status})`;
+          }
+        }
+        throw new Error(errText);
       }
 
-      const data = await res.json();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (_) {
+        throw new Error('Respons dari server tidak valid (Gagal menguraikan JSON).');
+      }
+
       if (data.courses && Array.isArray(data.courses)) {
         if (data.courses.length === 0) {
           throw new Error('AI tidak berhasil mendeteksi mata kuliah apapun dari screenshot tersebut. Pastikan teks terlihat jelas.');
