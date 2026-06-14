@@ -454,7 +454,7 @@ export default function App() {
 
   // Task CRUD Operations (backed by Firestore)
   const handleAddTask = async (newTask: Omit<Task, 'id'>) => {
-    const id = `task_${Date.now()}`;
+    const id = `task_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const taskWithId: Task = { ...newTask, id };
     if (isLocalGuest) {
       setTasks(prev => {
@@ -544,10 +544,11 @@ export default function App() {
     if (isLocalGuest) {
       setCourses(prev => {
         let next;
-        if (existing) {
-          next = prev.map(c => c.id === existing.id ? { ...c, ...newCourse } : c);
+        const reallyExisting = prev.find(c => c.code.trim().toUpperCase() === newCourse.code.trim().toUpperCase());
+        if (reallyExisting) {
+          next = prev.map(c => c.id === reallyExisting.id ? { ...c, ...newCourse } : c);
         } else {
-          const id = `course_${Date.now()}`;
+          const id = `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
           next = [...prev, { ...newCourse, id }];
         }
         try { localStorage.setItem('rancang_belajar_courses', JSON.stringify(next)); } catch (_) {}
@@ -564,7 +565,7 @@ export default function App() {
         return;
       }
 
-      const id = `course_${Date.now()}`;
+      const id = `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       await setDoc(doc(db, 'workspaces', workspaceId, 'courses', id), {
         ...newCourse,
         updatedAt: new Date().toISOString()

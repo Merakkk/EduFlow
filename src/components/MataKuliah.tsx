@@ -12,7 +12,13 @@ import {
   Calendar, 
   X, 
   CheckSquare, 
-  AlertCircle 
+  AlertCircle,
+  Sparkles,
+  Upload,
+  Image,
+  FileText,
+  Loader2,
+  Check
 } from 'lucide-react';
 
 interface MataKuliahProps {
@@ -34,6 +40,256 @@ export default function MataKuliah({
 }: MataKuliahProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+
+  // States for AI Screenshot upload schedule feature
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzerError, setAnalyzerError] = useState<string | null>(null);
+  const [parsedCourses, setParsedCourses] = useState<Omit<Course, 'id'>[]>([]);
+  const [selectedParsedIndexes, setSelectedParsedIndexes] = useState<Record<number, boolean>>({});
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadFile(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setUploadPreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      setAnalyzerError(null);
+      setParsedCourses([]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        setUploadFile(file);
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setUploadPreview(event.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+        setAnalyzerError(null);
+        setParsedCourses([]);
+      } else {
+        setAnalyzerError('Format file harus berupa gambar (PNG, JPG, JPEG, dll.)');
+      }
+    }
+  };
+
+  const handleAnalyzeScreenshot = async () => {
+    if (!uploadPreview) return;
+    setIsAnalyzing(true);
+    setAnalyzerError(null);
+
+    try {
+      const res = await fetch('/api/parse-schedule', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: uploadPreview,
+          mimeType: uploadFile?.type || 'image/png'
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Gagal memproses gambar jadwal.');
+      }
+
+      const data = await res.json();
+      if (data.courses && Array.isArray(data.courses)) {
+        if (data.courses.length === 0) {
+          throw new Error('AI tidak berhasil mendeteksi mata kuliah apapun dari screenshot tersebut. Pastikan teks terlihat jelas.');
+        }
+
+        // Group courses with identical names together, merging schedules
+        const groupedCoursesMap = new Map<string, any>();
+        
+        data.courses.forEach((c: any) => {
+          const courseName = c.name || 'Mata Kuliah Baru';
+          const normalized = courseName.toLowerCase().trim().replace(/\s+/g, ' ');
+          
+          const scheduleRows = c.schedules && c.schedules.length > 0 ? c.schedules : [
+            {
+              id: Date.now().toString() + Math.random().toString().substring(2, 6),
+              day: c.day || 'Senin',
+              timeStart: c.timeStart || '08:00',
+              timeEnd: c.timeEnd || '09:40',
+              room: c.room || 'TBA'
+            }
+          ];
+
+          if (groupedCoursesMap.has(normalized)) {
+            const existing = groupedCoursesMap.get(normalized);
+            
+            // Map and add new schedules
+            const newSchedules = scheduleRows.map((s: any) => ({
+              id: s.id || (Date.now().toString() + Math.random().toString().substring(2, 6)),
+              day: s.day || c.day || 'Senin',
+              timeStart: s.timeStart || c.timeStart || '08:00',
+              timeEnd: s.timeEnd || c.timeEnd || '09:40',
+              room: s.room || c.room || existing.room || 'TBA'
+            }));
+
+            // Append schedules avoiding redundant duplicates (same day + start time combination)
+            newSchedules.forEach((newS: any) => {
+              const isDuplicate = existing.schedules.some((existingS: any) => 
+                existingS.day === newS.day && 
+                existingS.timeStart === newS.timeStart
+              );
+              if (!isDuplicate) {
+                existing.schedules.push(newS);
+              }
+            });
+
+            // Update lecturer if existing is default but new is custom
+            if ((existing.lecturer === 'Dosen Pengampu' || !existing.lecturer) && c.lecturer && c.lecturer !== 'Dosen Pengampu') {
+              existing.lecturer = c.lecturer;
+            }
+          } else {
+            groupedCoursesMap.set(normalized, {
+              code: c.code || `MK-${Math.floor(Math.random() * 900) + 100}`,
+              name: courseName,
+              lecturer: c.lecturer || 'Dosen Pengampu',
+              room: c.room || scheduleRows[0].room || 'TBA',
+              day: c.day || scheduleRows[0].day || 'Senin',
+              color: '', // Assigned below
+              sks: c.sks || 3,
+              semester: (typeof selectedSemFilter === 'number' ? selectedSemFilter : (c.semester || currentSemester || 1)),
+              grade: '-',
+              schedules: scheduleRows.map((s: any) => ({
+                id: s.id || (Date.now().toString() + Math.random().toString().substring(2, 6)),
+                day: s.day || c.day || 'Senin',
+                timeStart: s.timeStart || c.timeStart || '08:00',
+                timeEnd: s.timeEnd || c.timeEnd || '09:40',
+                room: s.room || c.room || 'TBA'
+              }))
+            });
+          }
+        });
+
+        const colorKeys = Object.keys(COLOR_PRESETS);
+        const nameToColorMap = new Map<string, string>();
+        courses.forEach(c => {
+          const normalized = c.name.toLowerCase().trim().replace(/\s+/g, ' ');
+          if (normalized && c.color) {
+            nameToColorMap.set(normalized, c.color);
+          }
+        });
+
+        let unmappedColorIndex = 0;
+        const coursesWithDefaultAndColors = Array.from(groupedCoursesMap.values()).map((c: any) => {
+          const normalized = c.name.toLowerCase().trim().replace(/\s+/g, ' ');
+          
+          let color = nameToColorMap.get(normalized);
+          if (!color) {
+            color = colorKeys[unmappedColorIndex % colorKeys.length];
+            unmappedColorIndex++;
+            nameToColorMap.set(normalized, color);
+          }
+
+          c.color = color;
+          c.days = c.schedules.map((s: any) => s.day);
+          c.day = c.schedules[0]?.day || 'Senin';
+          c.timeStart = c.schedules[0]?.timeStart || '08:00';
+          c.timeEnd = c.schedules[0]?.timeEnd || '09:40';
+          c.room = c.schedules[0]?.room || 'TBA';
+
+          return c;
+        });
+
+        setParsedCourses(coursesWithDefaultAndColors);
+        const selObj: Record<number, boolean> = {};
+        coursesWithDefaultAndColors.forEach((_: any, idx: number) => {
+          selObj[idx] = true;
+        });
+        setSelectedParsedIndexes(selObj);
+      } else {
+        throw new Error('Format respon AI tidak sesuai.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setAnalyzerError(err.message || 'Gagal berkomunikasi dengan server AI.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleImportSelected = () => {
+    const selected = parsedCourses.filter((_, idx) => selectedParsedIndexes[idx]);
+    if (selected.length === 0) {
+      setAnalyzerError('Pilih setidaknya satu mata kuliah untuk diimpor.');
+      return;
+    }
+
+    selected.forEach(course => {
+      onAddCourse(course);
+    });
+
+    // Reset and close modal
+    setIsUploadModalOpen(false);
+    setUploadFile(null);
+    setUploadPreview(null);
+    setParsedCourses([]);
+    setSelectedParsedIndexes({});
+    setAnalyzerError(null);
+  };
+
+  const toggleSelectAllParsed = () => {
+    const allSelected = parsedCourses.every((_, idx) => selectedParsedIndexes[idx]);
+    const next: Record<number, boolean> = {};
+    parsedCourses.forEach((_, idx) => {
+      next[idx] = !allSelected;
+    });
+    setSelectedParsedIndexes(next);
+  };
+
+  const toggleSelectParsedIndex = (index: number) => {
+    setSelectedParsedIndexes(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
+  const handleModifyParsedCourseSemester = (index: number, newSem: number) => {
+    setParsedCourses(prev => prev.map((c, idx) => {
+      if (idx === index) {
+        return { ...c, semester: newSem };
+      }
+      return c;
+    }));
+  };
+
+  const handleManualNameChange = (val: string) => {
+    setName(val);
+    const normalizedInput = val.toLowerCase().trim().replace(/\s+/g, ' ');
+    if (normalizedInput) {
+      const existing = courses.find(c => c.name.toLowerCase().trim().replace(/\s+/g, ' ') === normalizedInput && (!editingCourse || c.id !== editingCourse.id));
+      if (existing && existing.color) {
+        setSelectedColor(existing.color);
+      }
+    }
+  };
   const [courseToDelete, setCourseToDelete] = useState<{ id: string; name: string } | null>(null);
 
   // Dynamic list of semesters in system
@@ -225,13 +481,22 @@ export default function MataKuliah({
             Lihat, tambahkan, dan perbarui kurikulum mata kuliah aktif beserta jadwal perkuliahannya.
           </p>
         </div>
-        <button
-          onClick={openAddModal}
-          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 cursor-pointer leading-none"
-          id="btn-add-course-main"
-        >
-          <Plus className="h-4.5 w-4.5" /> Tambah Mata Kuliah
-        </button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="inline-flex items-center justify-center rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 px-4 py-2.5 text-xs sm:text-sm font-bold shadow-2xs transition-all hover:bg-indigo-100 dark:hover:bg-indigo-950/60 active:scale-95 cursor-pointer leading-none"
+            id="btn-add-course-ai"
+          >
+            Impor Jadwal
+          </button>
+          <button
+            onClick={openAddModal}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 cursor-pointer leading-none"
+            id="btn-add-course-main"
+          >
+            <Plus className="h-4.5 w-4.5" /> Tambah Mata Kuliah
+          </button>
+        </div>
       </div>
 
       {/* Semester Filter Tabs */}
@@ -488,7 +753,7 @@ export default function MataKuliah({
                     required
                     placeholder="Contoh: Struktur Data"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => handleManualNameChange(e.target.value)}
                     className="w-full rounded-lg border border-slate-200 bg-white hover:border-slate-350 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50 focus:outline-none px-3 py-2 text-xs font-medium transition-all"
                     maxLength={60}
                   />
@@ -667,7 +932,7 @@ export default function MataKuliah({
               </div>
               <h3 className="font-display font-bold text-slate-900 text-sm sm:text-base">Hapus Mata Kuliah</h3>
             </div>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-xs text-slate-500 leading-relaxed border-b border-slate-100 pb-2">
               Apakah Anda yakin ingin menghapus mata kuliah <strong>{courseToDelete.name}</strong>? Seluruh tugas yang terafiliasi juga akan terhapus.
             </p>
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -688,6 +953,236 @@ export default function MataKuliah({
               >
                 Hapus
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-150">
+              <div className="flex items-center gap-2.5 text-indigo-700">
+                <div className="p-1.5 bg-indigo-50 rounded-lg">
+                  <Calendar className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-extrabold text-slate-900 text-sm sm:text-base">Impor Jadwal Kuliah</h3>
+                  <p className="text-[10px] sm:text-xs text-slate-500 font-semibold leading-none mt-0.5">Unggah screenshot jadwal perkuliahan Anda untuk sinkronisasi otomatis</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  setUploadFile(null);
+                  setUploadPreview(null);
+                  setParsedCourses([]);
+                  setAnalyzerError(null);
+                }}
+                className="h-7 w-7 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 flex items-center justify-center transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Error Message */}
+            {analyzerError && (
+              <div className="mt-3 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-semibold flex items-start gap-2 animate-in fade-in duration-100">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Gagal memproses:</span> {analyzerError}
+                </div>
+              </div>
+            )}
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
+              {parsedCourses.length === 0 ? (
+                <>
+                  {/* File Upload Zone */}
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => document.getElementById('ai-file-upload-input')?.click()}
+                    className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[180px] ${
+                      isDragging
+                        ? 'border-indigo-500 bg-indigo-50/50'
+                        : uploadPreview
+                        ? 'border-slate-200 bg-slate-50/50'
+                        : 'border-slate-200 hover:border-indigo-400 bg-slate-50 hover:bg-slate-100/50'
+                    }`}
+                  >
+                    <input
+                      id="ai-file-upload-input"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+
+                    {uploadPreview ? (
+                      <div className="relative w-full max-w-xs aspect-video rounded-xl border overflow-hidden shadow-xs shrink-0 max-h-[140px]" onClick={(e) => e.stopPropagation()}>
+                        <img src={uploadPreview} alt="Screenshot Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUploadFile(null);
+                            setUploadPreview(null);
+                            setAnalyzerError(null);
+                          }}
+                          className="absolute top-1.5 right-1.5 h-6 w-6 bg-slate-900/70 hover:bg-slate-900/90 rounded-full text-white flex items-center justify-center backdrop-blur-xs transition cursor-pointer"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="h-10 w-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+                          <Upload className="h-5 w-5" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-800">
+                          {isDragging ? 'Lepas berkas untuk mengunggah' : 'Pilih atau Seret screenshot jadwal di sini'}
+                        </p>
+                        <p className="text-[10px] text-slate-450 mt-1">Mendukung format PNG, JPG, JPEG ukuran hingga 10MB</p>
+                      </>
+                    )}
+                  </div>
+
+
+                </>
+              ) : (
+                /* Parsed Results List */
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <span className="text-xs font-bold text-slate-805">Mata Kuliah Terdeteksi ({parsedCourses.length} MK):</span>
+                    <button
+                      type="button"
+                      onClick={toggleSelectAllParsed}
+                      className="text-xs font-bold text-indigo-600 hover:text-indigo-805 cursor-pointer"
+                    >
+                      {parsedCourses.every((_, idx) => selectedParsedIndexes[idx]) ? 'Batal Pilih Semua' : 'Pilih Semua'}
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {parsedCourses.map((c, idx) => {
+                      const selected = selectedParsedIndexes[idx] || false;
+                      const presetOfCourse = COLOR_PRESETS[c.color] || COLOR_PRESETS.blue;
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => toggleSelectParsedIndex(idx)}
+                          className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                            selected
+                              ? 'border-indigo-200 bg-indigo-50/20 shadow-xs'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
+                          }`}
+                        >
+                          <div className="mt-0.5 shrink-0">
+                            <div className={`h-4.5 w-4.5 rounded flex items-center justify-center border transition-all ${
+                              selected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 hover:border-indigo-400 bg-white'
+                            }`}>
+                              {selected && <Check className="h-3 w-3 stroke-[3px]" />}
+                            </div>
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${presetOfCourse.badgeBg}`}>
+                                {c.code}
+                              </span>
+                              <span className="text-xs font-black text-slate-800 leading-tight truncate">{c.name}</span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-[10px] text-slate-500 font-semibold">
+                              <div className="flex items-center gap-1 leading-none truncate">
+                                <User className="h-3.5 w-3.5 text-slate-450 shrink-0" /> {c.lecturer || 'Dosen tidak tertera'}
+                              </div>
+                              <div className="flex items-center gap-1 leading-none truncate">
+                                <Calendar className="h-3.5 w-3.5 text-slate-450 shrink-0" /> {c.day}, {c.timeStart}-{c.timeEnd}
+                              </div>
+                              <div className="flex items-center gap-1 leading-none truncate">
+                                <MapPin className="h-3.5 w-3.5 text-slate-455 shrink-0" /> {c.room || 'TBA'}
+                              </div>
+                              <div className="flex items-center gap-1 leading-none" onClick={(e) => e.stopPropagation()}>
+                                <BookOpen className="h-3.5 w-3.5 text-slate-455 shrink-0 mr-1" /> {c.sks} SKS, 
+                                <span className="ml-1.5 text-slate-400">Sem:</span>
+                                <select
+                                  value={c.semester}
+                                  onChange={(e) => handleModifyParsedCourseSemester(idx, parseInt(e.target.value, 10))}
+                                  className="ml-1 bg-slate-150 dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded px-1.5 py-0.5 text-[9px] font-black text-slate-700 dark:text-slate-300 focus:outline-hidden cursor-pointer"
+                                >
+                                  {[1, 2, 3, 4, 5, 6, 7, 8].map(semNum => (
+                                    <option key={semNum} value={semNum}>{semNum}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Actions Footer */}
+            <div className="pt-4 border-t border-slate-150 flex items-center justify-between">
+              {parsedCourses.length === 0 ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUploadModalOpen(false);
+                      setUploadFile(null);
+                      setUploadPreview(null);
+                      setParsedCourses([]);
+                      setAnalyzerError(null);
+                    }}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!uploadPreview || isAnalyzing}
+                    onClick={handleAnalyzeScreenshot}
+                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 disabled:bg-indigo-305 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 transition cursor-pointer"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memproses...
+                      </>
+                    ) : (
+                      <span>Proses Jadwal</span>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setParsedCourses([]);
+                      setAnalyzerError(null);
+                    }}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                  >
+                    Ulangi Unggah
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleImportSelected}
+                    className="rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 transition cursor-pointer"
+                  >
+                    Impor Terpilih ({parsedCourses.filter((_, idx) => selectedParsedIndexes[idx]).length} MK)
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
