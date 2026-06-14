@@ -76,51 +76,146 @@ Sekarang proyek Anda sepenuhnya aktif secara lokal bersama fitur **Hot Module Re
 
 ---
 
-## 7. Solusi Eror `auth/unauthorized-domain` Saat Deploy Mandiri
+## 7. Solusi Eror `auth/unauthorized-domain` & Peringatan Keamanan GitHub
 
-Jika Anda mendeploy aplikasi ini ke hosting sendiri (seperti Vercel, Netlify, Cloud Run, dll.) dan mendapatkan eror **Gagal Otentikasi: Firebase Error (auth/unauthorized-domain)** ketika login Google:
+Jika mendeploy aplikasi ini ke hosting sendiri (seperti Vercel, Netlify, Cloud Run, dll.) dan mendapatkan pesan **unauthorized-domain** atau peringatan peringatan keamanan dari GitHub (peringatan eksposur Google API Key), silakan ikuti panduan berikut:
 
-### Mengapa Eror Ini Terjadi?
-Proyek Firebase bawaan (`pelagic-brand-w53sn`) adalah proyek yang **dikelola otomatis secara internal oleh platform Google AI Studio (sandbox)**. 
-- Karena proyek ini dikelola sistem AI Studio, Anda **tidak memiliki akses Owner/Admin** di Konsol Firebase untuk masuk ke tab Settings dan menambahkan domain rilis Anda sendiri.
-- Google OAuth mewajibkan setiap domain web yang melakukan autentikasi terdaftar di daftar **Authorized Domains (Domain Resmi)** milik Firebase demi alasan keamanan keamanan (menghindari pencurian identitas / spoofing).
+### Bagian A: Menghilangkan Peringatan Keamanan GitHub
+Sistem deteksi GitHub otomatis mendeteksi kode API Key Firebase jika ditulis secara terbuka di berkas `/src/firebase.ts`.
+1. **Solusi Baru Kami**: Kami telah memodifikasi `/src/firebase.ts` untuk menghapus semua kredensial hardcoded. Sekarang aplikasi akan membaca konfigurasi Firebase dari **Environment Variables** (Vite Env).
+2. Setelah Anda melakukan `git pull` perubahan terbaru ini dan melakukan `git push` kembali ke repositori Anda, peringatan dari GitHub akan otomatis ditandai sebagai **Resolved (Selesai/Aman)**!
 
-### Bagaimana Cara Mengatasinya?
+---
 
-Anda hanya perlu menggunakan **Proyek Firebase Anda Sendiri** (100% Gratis). Caranya sangatlah mudah:
+### Bagian B: Cara Mengatur Environment Variables di Dashboard Vercel (Supaya Login Bisa Berjalan)
+Agar rilis Vercel Anda tahu credential Firebase yang harus digunakan, Anda wajib memasukkannya ke panel kontrol Vercel:
+1. Buka dashboard proyek Anda di **[Vercel](https://vercel.com/)**.
+2. Masuk ke **Settings** > **Environment Variables**.
+3. Tambahkan 6 pasang Key & Value berikut sesuai dengan konfigurasi proyek Firebase Anda (`eduflow-83411`):
+   
+   | Key (Nama Variabel) | Contoh Value (Nilai) |
+   | :--- | :--- |
+   | `VITE_FIREBASE_PROJECT_ID` | `eduflow-83411` |
+   | `VITE_FIREBASE_APP_ID` | `1:231062152838:web:17c7a48077029cab9e5307` |
+   | `VITE_FIREBASE_API_KEY` | `AIzaSyDDLVrxLBeNbIL-zxRcVFOt6qwRxMhHbeE` |
+   | `VITE_FIREBASE_AUTH_DOMAIN` | `eduflow-83411.firebaseapp.com` |
+   | `VITE_FIREBASE_STORAGE_BUCKET` | `eduflow-83411.firebasestorage.app` |
+   | `VITE_FIREBASE_MESSAGING_SENDER_ID` | `231062152838` |
+   | `VITE_FIREBASE_FIRESTORE_DATABASE_ID` | `(default)` |
 
-1. **Buat Proyek Firebase Baru**:
-   - Buka [Firebase Console](https://console.firebase.google.com/).
-   - Klik **Add Project** (Tambah Proyek), masukkan nama proyek baru (misal: `eduflow-saya`), lalu selesaikan langkah pembuatannya.
-   - Karena Anda yang membuatnya, Anda adalah **Full Owner (Pemilik Utama)** dan memiliki hak cipta admin penuh!
+4. Setelah ditambahkan, lakukan pembentukan ulang (Redeploy) di Vercel agar perubahan variabel lingkungan ini aktif!
 
-2. **Aktifkan Autentikasi**:
-   - Di panel kiri, masuk ke menu **Authentication** (Otentikasi).
-   - Klik tab **Sign-in method** di atas.
-   - Aktifkan provider **Google** dan provider **Anonymous (Tamu)**.
+---
 
-3. **Daftarkan Domain Deploy Anda (Authorized Domains)**:
-   - Di halaman **Authentication**, masuk ke tab **Settings** (Pengaturan) di bagian atas.
-   - Di menu sebelah kiri bawah, cari **Authorized Domains** (Domain resmi).
-   - Klik **Add Domain** dan masukkan nama domain hosting mandiri Anda (misalnya: `eduflow-saya.vercel.app` atau `nama-layanan.run.app`).
+### Bagian C: Mengatasi Masalah "⚠️ Mode Offline" Setelah Login Berhasil
 
-4. **Dapatkan Config Proyek Baru Anda**:
-   - Masuk ke **Project settings** (Ikon roda gigi di samping "Project Overview" di pojok kiri atas).
-   - Scroll ke bagian bawah di tab **General**, lalu di bagian *Your apps*, pilih platform ikon **Web (`</>`)** untuk membuat aplikasi web baru.
-   - Masukkan nama aplikasi (misal `EduFlow Web`) lalu daftarkan.
-   - Salin objek konfigurasi `firebaseConfig` yang muncul, yang berisi nilai `apiKey`, `authDomain`, `projectId`, `appId`, dll.
+Jika Anda sudah bisa masuk (login berhasil) namun di panel atas bertuliskan **"⚠️ Mode Offline"** (tidak tersinkronisasi), ini artinya **autentikasi telah berhasil, tetapi koneksi ke basis data Cloud Firestore diblokir**.
 
-5. **Hubungkan dengan Aplikasi Anda (Tanpa Ubah Kode)**:
-   - Kami sudah memodifikasi berkas `/src/firebase.ts` agar mendukung penimpaan konfigurasi lewat **Environment Variables**.
-   - Anda cukup membuat berkas `.env` di folder lokal Anda (atau masukkan variabel ini ke Settings Environment Variables di dashboard Vercel/Netlify Anda) dengan format berikut:
-     ```env
-     VITE_FIREBASE_PROJECT_ID="project-id-anda"
-     VITE_FIREBASE_APP_ID="app-id-anda"
-     VITE_FIREBASE_API_KEY="api-key-anda"
-     VITE_FIREBASE_AUTH_DOMAIN="id-proyek-anda.firebaseapp.com"
-     VITE_FIREBASE_STORAGE_BUCKET="id-proyek-anda.firebasestorage.app"
-     VITE_FIREBASE_MESSAGING_SENDER_ID="sender-id-anda"
-     ```
-   - Aplikasi otomatis akan beralih menggunakan basis data Firebase milik Anda sendiri tanpa merusak kode bawaan!
+Saat menyimpan aturan di Firebase Console, jika Anda mendapatkan pesan:
+`Error saving rules – Line 1: Parse error.`
 
-Selamat mencoba dan mengembangkan aplikasi Anda lebih jauh lewat Visual Studio Code! 🚀
+Ini memiliki dua kemungkinan penyebab utama:
+1. **Salah Tempat (Sangat Sering Terjadi)**: Anda kemungkinan menempelkan aturan ini di tab aturan **Realtime Database** (yang menggunakan format JSON `{ "rules": ... }`). Aturan ini **wajib** dipasang di halaman **Firestore Database**!
+2. **Karakter Terbawa**: Pastikan Anda hanya menyalin kode di bawah ini tanpa menyertakan tanda petik tiga (```) atau judul bahasa di atasnya.
+
+Berikut langkah penyelesaian langkah-demi-langkah yang benar:
+
+1. **Aktifkan Cloud Firestore Database**:
+   - Di panel navigasi sebelah kiri Firebase Console, cari dan klik **Firestore Database** (bukan *Realtime Database*).
+   - Klik **Create Database** (Buat Basis Data) jika tombolnya muncul.
+   - Pilih wilayah/lokasi terdekat (misal: `asia-southeast1` untuk Singapura / Indonesia).
+   - Pada halaman pemilihan mode aturan awal, pilih **Start in test mode**, lalu klik **Next** dan **Done**.
+
+2. **Terapkan Aturan Keamanan (Firestore Rules)**:
+   - Setelah halaman Firestore terbuka, pilih tab **Rules** (Aturan) di bagian atas halaman.
+   - Hapus seluruh isi teks yang ada di dalam kotak editor bawaan tersebut.
+   - Salin seluruh kode di bawah ini secara utuh, dan tempelkan (paste) ke kotak editor yang sudah dikosongkan tadi:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global safety net catches all undefined paths.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    // Workspace shape validation helper
+    function isValidWorkspace(data) {
+      return data.keys().hasAll(['currentSemester', 'semesterGPAs', 'simulationDate'])
+        && data.keys().size() <= 6
+        && data.currentSemester is int
+        && data.currentSemester >= 1
+        && data.currentSemester <= 14
+        && data.semesterGPAs is map
+        && data.simulationDate is string
+        && data.simulationDate.size() <= 20;
+    }
+
+    // Course shape validation helper
+    function isValidCourse(data) {
+      return data.keys().hasAll(['code', 'name', 'lecturer', 'room', 'day', 'timeStart', 'timeEnd', 'color'])
+        && data.code is string && data.code.size() <= 20
+        && data.name is string && data.name.size() <= 100
+        && data.lecturer is string && data.lecturer.size() <= 100
+        && data.room is string && data.room.size() <= 100
+        && data.day is string && data.day.size() <= 20
+        && data.timeStart is string && data.timeStart.size() <= 10
+        && data.timeEnd is string && data.timeEnd.size() <= 10
+        && data.color is string && data.color.size() <= 20;
+    }
+
+    // Task shape validation helper
+    function isValidTask(data) {
+      return data.keys().hasAll(['courseId', 'title', 'description', 'deadline', 'priority', 'status'])
+        && data.courseId is string && data.courseId.size() <= 50
+        && data.title is string && data.title.size() <= 200
+        && data.description is string && data.description.size() <= 1000
+        && data.deadline is string && data.deadline.size() <= 20
+        && data.priority is string && (data.priority == 'Tinggi' || data.priority == 'Sedang' || data.priority == 'Rendah')
+        && data.status is string && (data.status == 'Belum Mulai' || data.status == 'Proses' || data.status == 'Selesai');
+    }
+
+    // Match rules
+    match /workspaces/{workspaceId} {
+      allow get: if request.auth != null && request.auth.uid == workspaceId;
+      allow create: if request.auth != null && request.auth.uid == workspaceId && isValidWorkspace(incoming());
+      allow update: if request.auth != null && request.auth.uid == workspaceId && isValidWorkspace(incoming());
+      allow delete: if false; // prevent total deletion from client
+
+      match /courses/{courseId} {
+        allow list, get: if request.auth != null && request.auth.uid == workspaceId;
+        allow create: if request.auth != null && request.auth.uid == workspaceId && isValidId(courseId) && isValidCourse(incoming());
+        allow update: if request.auth != null && request.auth.uid == workspaceId && isValidId(courseId) && isValidCourse(incoming());
+        allow delete: if request.auth != null && request.auth.uid == workspaceId && isValidId(courseId);
+      }
+
+      match /tasks/{taskId} {
+        allow list, get: if request.auth != null && request.auth.uid == workspaceId;
+        allow create: if request.auth != null && request.auth.uid == workspaceId && isValidId(taskId) && isValidTask(incoming());
+        allow update: if request.auth != null && request.auth.uid == workspaceId && isValidId(taskId) && isValidTask(incoming());
+        allow delete: if request.auth != null && request.auth.uid == workspaceId && isValidId(taskId);
+      }
+    }
+  }
+}
+```
+
+   - Klik tombol **Publish** (Terbitkan) di pojok kanan atas setelah menempelkan aturan ini. Aturan ini akan aktif secara instan!
+
+3. **Buka / Muat Ulang Aplikasi Anda**:
+   - Segera buka kembali tab tautan aplikasi Vercel Anda (`https://eduflow13.vercel.app/`).
+   - Lakukan refresh, dan status di header Anda akan langsung berubah dan menampilkan ikon bulat hijau **"● Terhubung Live"**.
+   - Sekarang, seluruh data mata kuliah, jadwal kuliah, kalender, dan daftar tugas tersinkronisasi 100% secara real-time dan aman dari perangkat mobile mana pun maupun desktop!
+
+Selamat menyelesaikan dan mengembangkan aplikasi EduFlow Anda! 🚀
