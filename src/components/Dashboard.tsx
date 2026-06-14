@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Course, Task } from '../types';
 import { COLOR_PRESETS, DAYS_OF_WEEK } from '../data/initialData';
 import { formatIndonesianShortDate, getDeadlineAlert, getDayDifference } from '../utils/dateHelpers';
@@ -43,6 +43,13 @@ export default function Dashboard({
   const [scheduleDay, setScheduleDay] = useState<string>(
     DAYS_OF_WEEK.includes(todayDayName) ? todayDayName : 'Senin'
   );
+
+  // Sync with current day name in real-time
+  useEffect(() => {
+    if (DAYS_OF_WEEK.includes(todayDayName)) {
+      setScheduleDay(todayDayName);
+    }
+  }, [todayDayName]);
 
   const activeSemester = currentSemester || 5;
   const currentSemCourses = courses.filter(c => (c.semester || activeSemester) === activeSemester);
@@ -209,19 +216,32 @@ export default function Dashboard({
             </div>
             {/* Quick Day Selector pills */}
             <div className="flex flex-wrap gap-1" id="day-pills">
-              {DAYS_OF_WEEK.map((day) => (
-                <button
-                  key={day}
-                  onClick={() => setScheduleDay(day)}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold tracking-tight border transition-all cursor-pointer ${
-                    scheduleDay === day
-                      ? 'bg-slate-900 dark:bg-indigo-600 text-white border-slate-950 dark:border-indigo-750 shadow-sm'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  {day}
-                </button>
-              ))}
+              {DAYS_OF_WEEK.map((day) => {
+                const isToday = day === todayDayName;
+                return (
+                  <button
+                    key={day}
+                    onClick={() => setScheduleDay(day)}
+                    className={`relative rounded-lg px-2.5 py-1 text-xs font-semibold tracking-tight border transition-all cursor-pointer ${
+                      scheduleDay === day
+                        ? 'bg-slate-900 dark:bg-indigo-600 text-white border-slate-950 dark:border-indigo-750 shadow-sm'
+                        : isToday
+                        ? 'bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/80 hover:bg-indigo-100/50'
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {day}
+                    {isToday && (
+                      <span className="absolute -top-1 -right-1 flex p-[1px] bg-white dark:bg-slate-900 rounded-full">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-500"></span>
+                        </span>
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -244,24 +264,24 @@ export default function Dashboard({
                         <span className={`inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${preset.badgeBg}`}>
                           {course.code}
                         </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{schedule.room}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-200 font-semibold">{schedule.room}</span>
                       </div>
                       <h3 className={`font-display font-bold text-sm sm:text-base ${preset.text}`}>
                         {course.name}
                       </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Dosen: {course.lecturer}</p>
+                      <p className="text-xs text-slate-550 dark:text-slate-300 font-medium">Dosen: {course.lecturer}</p>
                     </div>
 
                     <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-center border-t sm:border-t-0 border-slate-200/50 dark:border-slate-800/40 pt-2.5 sm:pt-0 gap-1.5">
-                      <span className="inline-flex items-center gap-1 text-xs text-slate-700 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-705 font-bold shrink-0 shadow-3xs">
-                        <Clock className="h-3.5 w-3.5 text-slate-450 dark:text-slate-400" /> {schedule.timeStart} - {schedule.timeEnd}
+                      <span className="inline-flex items-center gap-1 text-xs text-slate-700 dark:text-slate-200 bg-white/80 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 font-bold shrink-0 shadow-3xs">
+                        <Clock className="h-3.5 w-3.5 text-slate-500 dark:text-slate-350" /> {schedule.timeStart} - {schedule.timeEnd}
                       </span>
                       {activeTasks.length > 0 ? (
-                        <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900 px-2 py-0.5 rounded-full shrink-0">
+                        <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-50/50 dark:bg-rose-950/35 border border-rose-100 dark:border-rose-900/60 px-2 py-0.5 rounded-full shrink-0">
                           {activeTasks.length} Tugas Pending
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900 px-2 py-0.5 rounded-full shrink-0">
+                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/35 border border-emerald-100 dark:border-emerald-900/60 px-2 py-0.5 rounded-full shrink-0">
                           Bebas Tugas
                         </span>
                       )}
