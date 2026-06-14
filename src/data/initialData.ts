@@ -8,6 +8,7 @@ export const INITIAL_COURSES: Course[] = [
     lecturer: 'Dr. Ir. Hermawan, M.T.',
     room: 'Ruang 402, Gedung Baru',
     day: 'Senin',
+    days: ['Senin'],
     timeStart: '08:00',
     timeEnd: '09:40',
     color: 'blue'
@@ -19,6 +20,7 @@ export const INITIAL_COURSES: Course[] = [
     lecturer: 'Prof. Supriadi, Ph.D.',
     room: 'Lab Komputasi A',
     day: 'Selasa',
+    days: ['Selasa'],
     timeStart: '10:00',
     timeEnd: '11:40',
     color: 'purple'
@@ -30,6 +32,7 @@ export const INITIAL_COURSES: Course[] = [
     lecturer: 'Amalia Lestari, S.Kom., M.I.T.',
     room: 'Lab Database 2',
     day: 'Rabu',
+    days: ['Rabu'],
     timeStart: '13:00',
     timeEnd: '14:40',
     color: 'emerald'
@@ -41,6 +44,7 @@ export const INITIAL_COURSES: Course[] = [
     lecturer: 'Riza Fauzi, M.Cs.',
     room: 'Ruang 104, Gedung Teknik',
     day: 'Kamis',
+    days: ['Kamis'],
     timeStart: '08:00',
     timeEnd: '10:30',
     color: 'amber'
@@ -52,6 +56,7 @@ export const INITIAL_COURSES: Course[] = [
     lecturer: 'Dr. Eng. Yanuardi, S.T.',
     room: 'Ruang Seminar Utama',
     day: 'Jumat',
+    days: ['Jumat'],
     timeStart: '09:00',
     timeEnd: '11:30',
     color: 'rose'

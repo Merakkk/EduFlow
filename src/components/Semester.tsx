@@ -38,6 +38,8 @@ export default function Semester({
   setSemesterGPAs,
 }: SemesterProps) {
   const [selectedSemTab, setSelectedSemTab] = useState<number>(currentSemester);
+  const [targetIpk, setTargetIpk] = useState<number>(3.75);
+  const [targetSem, setTargetSem] = useState<number>(8);
 
   // Keep tab selected on current active semester when it loads or changes from Firestore
   React.useEffect(() => {
@@ -173,12 +175,16 @@ export default function Semester({
       lecturer: 'Dosen Pembimbing',
       room: 'Luring/Daring',
       day: 'Senin',
+      days: ['Senin'],
       timeStart: '08:00',
       timeEnd: '09:40',
       color: newColor,
       semester: selectedSemTab,
       sks: newSks,
-      grade: '-'
+      grade: '-',
+      schedules: [
+        { id: `sch_${Date.now()}`, day: 'Senin', timeStart: '08:00', timeEnd: '09:40', room: 'Luring/Daring' }
+      ]
     });
 
     // Reset fields
@@ -196,12 +202,12 @@ export default function Semester({
   return (
     <div className="space-y-6" id="semester-view-container">
       {/* Detail Header banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Layers className="h-6 w-6 text-indigo-600" /> Ringkasan Akademik & Semester
+          <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+            <Layers className="h-6 w-6 text-indigo-600 dark:text-indigo-400" /> Ringkasan Akademik & Semester
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Pantau IP Kumulatif (IPK) Anda, kelola nilai per mata kuliah (IPS), dan sinkronisasikan target kelulusan kuliah.
           </p>
         </div>
@@ -210,7 +216,7 @@ export default function Semester({
       {/* Main Stats Banner Bento */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6" id="semester-bento-stats">
         {/* IPK Score widget */}
-        <div className="bg-slate-900 rounded-2xl p-5 text-white flex flex-col justify-between shadow-xs border border-slate-800">
+        <div className="bg-slate-900 dark:bg-slate-950 rounded-2xl p-5 text-white flex flex-col justify-between shadow-xs border border-slate-800 dark:border-slate-800/80">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-300">Indeks Prestasi Kumulatif</span>
             <Award className="h-5 w-5 text-indigo-400" />
@@ -225,25 +231,25 @@ export default function Semester({
         </div>
 
         {/* Current Active Semester Card */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 flex flex-col justify-between shadow-2xs">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 flex flex-col justify-between shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Semester Aktif Sekarang</span>
-            <CheckCircle className="h-5 w-5 text-indigo-600" />
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">Semester Aktif Sekarang</span>
+            <CheckCircle className="h-5 w-5 text-indigo-600 dark:text-indigo-455" />
           </div>
           <div className="my-3 flex items-baseline gap-2">
-            <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-display">Semester {currentSemester}</span>
+            <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-100 font-display">Semester {currentSemester}</span>
           </div>
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-150 p-1.5 rounded-lg">
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 p-1.5 rounded-lg font-sans">
             <button
               onClick={() => setCurrentSemester(prev => Math.max(1, prev - 1))}
-              className="px-2.5 py-1 text-xs font-bold rounded-md bg-white border border-slate-200 hover:bg-slate-100 transition active:scale-95 cursor-pointer"
+              className="px-2.5 py-1 text-xs font-bold rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95 cursor-pointer"
             >
               -
             </button>
-            <span className="flex-1 text-center text-xs font-bold text-indigo-700">Ubah Semester</span>
+            <span className="flex-1 text-center text-xs font-bold text-indigo-700 dark:text-indigo-400">Ubah Semester</span>
             <button
               onClick={() => setCurrentSemester(prev => Math.min(10, prev + 1))}
-              className="px-2.5 py-1 text-xs font-bold rounded-md bg-white border border-slate-200 hover:bg-slate-100 transition active:scale-95 cursor-pointer"
+              className="px-2.5 py-1 text-xs font-bold rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95 cursor-pointer"
             >
               +
             </button>
@@ -251,28 +257,136 @@ export default function Semester({
         </div>
 
         {/* Dynamic GPA SKS Calculator summary */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 flex flex-col justify-between shadow-2xs">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 flex flex-col justify-between shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Total SKS Terkelola</span>
-            <Calculator className="h-5 w-5 text-indigo-600" />
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">Total SKS Terkelola</span>
+            <Calculator className="h-5 w-5 text-indigo-600 dark:text-indigo-455" />
           </div>
           <div className="my-3">
-            <span className="text-3xl sm:text-4xl font-extrabold text-slate-800 font-mono">
+            <span className="text-3xl sm:text-4xl font-extrabold text-slate-800 dark:text-slate-100 font-mono">
               {courses.reduce((sum, c) => sum + (c.sks || 3), 0)}
             </span>
-            <span className="text-xs text-slate-500 ml-1 font-bold">SKS</span>
+            <span className="text-xs text-slate-505 dark:text-slate-400 ml-1 font-bold">SKS</span>
           </div>
-          <p className="text-[11px] text-slate-500 leading-relaxed">
+          <p className="text-[11px] text-slate-550 dark:text-slate-400 leading-relaxed">
             SKS digunakan sebagai penentu beban nilai bobot IPS terhitung berdasarkan standard universitas.
           </p>
         </div>
+      </div>
+
+      {/* Premium Target IPK Estimator Card */}
+      <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-2xs space-y-4 my-6" id="ipk-target-calculator">
+        <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-400">
+          <Calculator className="h-5 w-5" />
+          <h2 className="font-display font-extrabold text-slate-900 dark:text-slate-100 text-sm sm:text-base tracking-tight">
+            Estimator Target Kelulusan IPK (Dream GPA Tracker)
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
+          <div>
+            <label className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400 block mb-1">
+              Target IPK Kelulusan Impian
+            </label>
+            <input
+              type="number"
+              min="1.0"
+              max="4.0"
+              step="0.05"
+              value={targetIpk}
+              onChange={(e) => setTargetIpk(Math.min(4.0, Math.max(1.0, parseFloat(e.target.value) || 0)))}
+              className="w-full bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400 block mb-1">
+              Hingga Semester Kelulusan
+            </label>
+            <select
+              value={targetSem}
+              onChange={(e) => setTargetSem(parseInt(e.target.value, 10))}
+              className="w-full bg-white dark:bg-slate-800 border border-slate-250 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none"
+            >
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(semNum => (
+                <option key={semNum} value={semNum}>Semester {semNum}</option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-2 md:col-span-1">
+            {(() => {
+              const currentSemsNum = maxSemesterInSystem;
+              const currentAvgIps = parseFloat(cumulativeIPK);
+              const remainingSems = targetSem - currentSemsNum;
+
+              if (remainingSems <= 0) {
+                return (
+                  <div className="p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-xl text-center">
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                      Sisa semester harus lebih tinggi dari saat ini ({currentSemsNum}).
+                    </p>
+                  </div>
+                );
+              }
+
+              const totalCurrentPoints = currentAvgIps * currentSemsNum;
+              const totalNeededPoints = targetIpk * targetSem;
+              const neededFromRemaining = totalNeededPoints - totalCurrentPoints;
+              const reqAvgIps = parseFloat((neededFromRemaining / remainingSems).toFixed(2));
+
+              if (reqAvgIps > 4.0) {
+                return (
+                  <div className="p-2.5 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40 rounded-xl text-center text-rose-700 dark:text-rose-400">
+                    <p className="text-[9.5px] font-black uppercase tracking-wide">Melampaui Batas (4.00)</p>
+                    <p className="text-[10px] font-bold mt-0.5">Sangat Sulit (Butuh IPS {reqAvgIps.toFixed(2)})</p>
+                  </div>
+                );
+              }
+
+              if (reqAvgIps <= 0) {
+                return (
+                  <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-xl text-center text-emerald-700 dark:text-emerald-400">
+                    <p className="text-[9.5px] font-black uppercase tracking-wide">Sangat Aman! ✨</p>
+                    <p className="text-[10px] font-bold mt-0.5">IPK saat ini sudah melampaui target!</p>
+                  </div>
+                );
+              }
+
+              let motivationColor = "text-indigo-650 dark:text-indigo-400";
+              let motivationLabel = "Sangat Mungkin";
+              let cardBgColor = "bg-indigo-50 dark:bg-indigo-950/10 border-indigo-100 dark:border-indigo-900/40";
+              if (reqAvgIps >= 3.65) {
+                motivationColor = "text-amber-600 dark:text-amber-400";
+                motivationLabel = "Butuh Fokus Tinggi";
+                cardBgColor = "bg-amber-50/50 dark:bg-amber-955/10 border-amber-100 dark:border-amber-900/30";
+              } else if (reqAvgIps >= 3.0) {
+                motivationColor = "text-emerald-600 dark:text-emerald-400";
+                motivationLabel = "Aman & Terbuka Lebar";
+                cardBgColor = "bg-emerald-50/55 dark:bg-emerald-955/10 border-emerald-100 dark:border-emerald-900/30";
+              }
+
+              return (
+                <div className={`p-2.5 rounded-xl border text-center ${cardBgColor}`}>
+                  <span className="text-[8.5px] uppercase font-black tracking-wider text-slate-400 dark:text-slate-500 block">IPS Per Semester Sisa</span>
+                  <span className={`text-lg font-black font-mono block leading-snug ${motivationColor}`}>
+                    {reqAvgIps.toFixed(2)}
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-550 dark:text-slate-450 block mt-0.5 leading-none">
+                    Status: <strong className="text-slate-700 dark:text-slate-200">{motivationLabel}</strong>
+                  </span>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 italic font-medium leading-none">
+          * Perhitungan didasarkan pada bobot rata-rata IPS linier per semester mendatang untuk mencapai target nilai kelulusan Anda.
+        </p>
       </div>
 
       {/* Main split row layouts */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6" id="semester-detail-split">
         {/* Left Column: List of Semesters (Col Span 1) */}
         <div className="xl:col-span-1 space-y-3">
-          <h3 className="text-xs uppercase font-extrabold tracking-wider text-slate-400">Pilih Semester:</h3>
+          <h3 className="text-xs uppercase font-extrabold tracking-wider text-slate-400 dark:text-slate-500">Pilih Semester:</h3>
           <div className="grid grid-cols-2 xl:grid-cols-1 gap-2">
             {semestersList.map(sem => {
               const semCalc = calculateIPS(sem);
@@ -285,25 +399,25 @@ export default function Semester({
                   onClick={() => setSelectedSemTab(sem)}
                   className={`flex flex-col text-left p-3.5 rounded-xl border transition-all relative ${
                     isActive
-                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100'
-                      : 'bg-white border-slate-200 hover:border-slate-350 text-slate-700'
+                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md dark:shadow-none'
+                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-350 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
                     <span className="text-xs font-black">Semester {sem}</span>
                     {isCurrent && (
                       <span className={`text-[8px] font-black uppercase tracking-wider px-1 py-0.5 rounded ${
-                        isActive ? 'bg-indigo-850 text-indigo-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                        isActive ? 'bg-indigo-850 text-indigo-200' : 'bg-indigo-50 dark:bg-slate-800 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-slate-700'
                       }`}>
                         Aktif
                       </span>
                     )}
                   </div>
-                  <div className="flex items-baseline gap-1 mt-1.5">
-                    <span className={`text-base font-extrabold font-mono ${isActive ? 'text-emerald-300' : 'text-indigo-600'}`}>
+                  <div className="flex items-baseline gap-1 mt-1.5 font-sans">
+                    <span className={`text-base font-extrabold font-mono ${isActive ? 'text-emerald-300' : 'text-indigo-600 dark:text-indigo-405'}`}>
                       {semCalc.ips.toFixed(2)}
                     </span>
-                    <span className={`text-[9px] ${isActive ? 'text-slate-200' : 'text-slate-400'} font-semibold`}>
+                    <span className={`text-[9px] ${isActive ? 'text-slate-205' : 'text-slate-400 dark:text-slate-500'} font-semibold`}>
                       IPS {semCalc.autoCalculated ? '(Kalkulasi)' : '(Manual)'}
                     </span>
                   </div>
@@ -321,27 +435,27 @@ export default function Semester({
               }));
               setSelectedSemTab(nextSemNum);
             }}
-            className="w-full text-center py-2.5 rounded-xl border border-dashed border-slate-350 bg-slate-50 hover:bg-slate-100 hover:border-slate-400 text-xs font-bold text-slate-600 transition cursor-pointer"
+            className="w-full text-center py-2.5 rounded-xl border border-dashed border-slate-350 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-850 hover:border-slate-400 text-xs font-bold text-slate-600 dark:text-slate-400 transition cursor-pointer"
           >
             + Tambah Semester Baru
           </button>
         </div>
 
         {/* Right Column: Tab View of Selected Semester's courses & grades (Col Span 3) */}
-        <div className="xl:col-span-3 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 space-y-6 shadow-2xs" id="semester-detail-panel">
+        <div className="xl:col-span-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-6 shadow-2xs" id="semester-detail-panel">
           {/* Panel Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-805 pb-4">
             <div>
-              <h2 className="font-display text-lg font-extrabold text-slate-930 tracking-tight">
+              <h2 className="font-display text-lg font-extrabold text-slate-930 dark:text-slate-105 tracking-tight">
                 Rincian Semester {selectedSemTab}
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
                 {selectedSemCalc.autoCalculated ? (
-                  <span className="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 inline-block text-[10px]">
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-900/40 inline-block text-[10px]">
                     Kalkulasi Otomatis Aktif
                   </span>
                 ) : (
-                  <span className="text-indigo-600 font-medium bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 inline-block text-[10px]">
+                  <span className="text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-slate-850 px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-900/40 inline-block text-[10px]">
                     Input Manual / Kosong (Belum ada nilai terinput)
                   </span>
                 )}
@@ -352,7 +466,7 @@ export default function Semester({
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setIsAddingCourse(!isAddingCourse)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-150 text-xs font-bold text-indigo-700 transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/45 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-150 dark:border-indigo-800 text-xs font-bold text-indigo-700 dark:text-indigo-300 transition cursor-pointer"
               >
                 <Plus className="h-4 w-4" /> Tambah Mata Kuliah Baru
               </button>
@@ -361,7 +475,7 @@ export default function Semester({
                 <button
                   type="button"
                   onClick={() => handleDeleteSemester(selectedSemTab)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-250 text-xs font-bold text-rose-700 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-955/20 hover:bg-rose-100 dark:hover:bg-rose-950/40 border border-rose-250 dark:border-rose-900/40 text-xs font-bold text-rose-700 dark:text-rose-405 transition cursor-pointer"
                   title="Hapus Semester Ini"
                 >
                   <Trash2 className="h-4 w-4 text-rose-500" /> Hapus Semester
@@ -372,66 +486,66 @@ export default function Semester({
 
           {/* Form to insert quick course into this semester */}
           {isAddingCourse && (
-            <form onSubmit={handleAddCourseSubmit} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-150">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
-                <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Tambah Mata Kuliah Ke Semester {selectedSemTab}</span>
+            <form onSubmit={handleAddCourseSubmit} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-1.5">
+                <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Tambah Mata Kuliah Ke Semester {selectedSemTab}</span>
                 <button
                   type="button"
                   onClick={() => setIsAddingCourse(false)}
-                  className="p-1 rounded text-slate-400 hover:text-slate-600"
+                  className="p-1 rounded text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               {errorMsg && (
-                <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded p-2 font-bold">{errorMsg}</p>
+                <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-955/35 border border-rose-100 dark:border-rose-900/40 rounded p-2 font-bold">{errorMsg}</p>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
                 <div className="sm:col-span-3">
-                  <label className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 block mb-1">Kode MK</label>
+                  <label className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400 block mb-1">Kode MK</label>
                   <input
                     type="text"
                     placeholder="IF-301"
                     value={newCode}
                     onChange={(e) => setNewCode(e.target.value)}
-                    className="w-full bg-white border border-slate-250 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-bold focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-750 text-slate-800 dark:text-slate-100 rounded-lg px-2.5 py-1.5 text-xs font-bold focus:outline-none focus:border-indigo-550"
                     maxLength={12}
                   />
                 </div>
                 <div className="sm:col-span-5">
-                  <label className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 block mb-1">Nama Mata Kuliah</label>
+                  <label className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400 block mb-1">Nama Mata Kuliah</label>
                   <input
                     type="text"
                     placeholder="Rekayasa Perangkat Lunak"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    className="w-full bg-white border border-slate-250 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-755 text-slate-700 dark:text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-550"
                     maxLength={60}
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 block mb-1">SKS</label>
+                  <label className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400 block mb-1">SKS</label>
                   <select
                     value={newSks}
                     onChange={(e) => setNewSks(parseInt(e.target.value, 10))}
-                    className="w-full bg-white border border-slate-250 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-755 text-slate-700 dark:text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none"
                   >
                     {[1, 2, 3, 4, 5, 6].map(num => (
-                      <option key={num} value={num}>{num} SKS</option>
+                      <option key={num} value={num} className="dark:bg-slate-900">{num} SKS</option>
                     ))}
                   </select>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 block mb-1">Warna Akses</label>
+                  <label className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400 block mb-1">Warna Akses</label>
                   <select
                     value={newColor}
                     onChange={(e) => setNewColor(e.target.value)}
-                    className="w-full bg-white border border-slate-250 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-755 text-slate-700 dark:text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none"
                   >
                     {Object.keys(COLOR_PRESETS).map(colorKey => (
-                      <option key={colorKey} value={colorKey}>
+                      <option key={colorKey} value={colorKey} className="dark:bg-slate-900">
                         {colorKey.toUpperCase()}
                       </option>
                     ))}
@@ -439,17 +553,17 @@ export default function Semester({
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsAddingCourse(false)}
-                  className="px-3.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-semibold"
+                  className="px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow"
+                  className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow cursor-pointer"
                 >
                   Tambah & Simpan
                 </button>
@@ -459,17 +573,17 @@ export default function Semester({
 
           {/* Manual Input Panel when no courses are added */}
           {!selectedSemCalc.autoCalculated && (
-            <div className="p-4 rounded-xl border border-dashed border-indigo-150 bg-indigo-50/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-4 rounded-xl border border-dashed border-indigo-150 dark:border-slate-800 bg-indigo-50/15 dark:bg-slate-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
-                <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <Info className="h-4 w-4 text-indigo-500 shrink-0" /> Ubah Nilai IPS Semester Manual
+                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Info className="h-4 w-4 text-indigo-500 dark:text-indigo-400 shrink-0" /> Ubah Nilai IPS Semester Manual
                 </h4>
-                <p className="text-[11px] text-slate-500 leading-snug">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
                   Anda belum memasukkan mata kuliah dan nilai untuk semester {selectedSemTab}. Masukkan indeks prestasi secara manual untuk kalkulasi cepat, atau daftarkan mata kuliah semester ini di atas.
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs text-slate-600 font-bold">IPS Manual:</span>
+                <span className="text-xs text-slate-605 dark:text-slate-300 font-bold">IPS Manual:</span>
                 <input
                   type="number"
                   min="0"
@@ -478,7 +592,7 @@ export default function Semester({
                   placeholder="0.00"
                   value={semesterGPAs[selectedSemTab] !== undefined ? semesterGPAs[selectedSemTab] : ''}
                   onChange={(e) => handleManualIpsChange(selectedSemTab, e.target.value)}
-                  className="w-20 bg-white border border-slate-250 rounded-lg px-2 py-1.5 text-center text-xs text-indigo-750 font-bold font-mono focus:outline-none focus:border-indigo-500"
+                  className="w-20 bg-white dark:bg-slate-850 border border-slate-250 dark:border-slate-800 text-slate-800 dark:text-indigo-300 rounded-lg px-2 py-1.5 text-center text-xs font-bold font-mono focus:outline-none focus:border-indigo-500"
                 />
               </div>
             </div>
@@ -486,12 +600,12 @@ export default function Semester({
 
           {/* Table list of courses for the selected semester */}
           <div className="space-y-3.5">
-            <h3 className="text-xs uppercase font-extrabold tracking-wider text-slate-400">Daftar Mata Kuliah Semester {selectedSemTab}:</h3>
+            <h3 className="text-xs uppercase font-extrabold tracking-wider text-slate-400 dark:text-slate-500">Daftar Mata Kuliah Semester {selectedSemTab}:</h3>
             
             {selectedSemCourses.length > 0 ? (
-              <div className="border border-slate-150 rounded-xl overflow-hidden shadow-3xs" id="semester-courses-table">
+              <div className="border border-slate-150 dark:border-slate-800 rounded-xl overflow-hidden shadow-3xs" id="semester-courses-table">
                 {/* Table Header */}
-                <div className="hidden sm:grid grid-cols-12 bg-slate-50 text-[10px] uppercase font-bold text-slate-400 tracking-wider px-4 py-2.5 border-b border-slate-150">
+                <div className="hidden sm:grid grid-cols-12 bg-slate-50 dark:bg-slate-950 text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider px-4 py-2.5 border-b border-slate-150 dark:border-slate-800">
                   <div className="col-span-2">Kode</div>
                   <div className="col-span-4">Mata Kuliah</div>
                   <div className="col-span-2 text-center">SKS</div>
@@ -500,20 +614,20 @@ export default function Semester({
                 </div>
 
                 {/* Table Body */}
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
                   {selectedSemCourses.map(c => {
                     const preset = COLOR_PRESETS[c.color] || COLOR_PRESETS.blue;
                     return (
-                      <div key={c.id} className="grid grid-cols-1 sm:grid-cols-12 items-center gap-2 sm:gap-0 px-4 py-3 bg-white hover:bg-slate-50/50 transition">
+                      <div key={c.id} className="grid grid-cols-1 sm:grid-cols-12 items-center gap-2 sm:gap-0 px-4 py-3 bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-850/45 transition">
                         {/* Course Code info */}
                         <div className="col-span-2 font-mono text-xs font-bold">
-                          <span className={`inline-block px-2 py-0.5 rounded ${preset.badgeBg} text-[9.5px]`}>
+                          <span className={`inline-block px-2 py-0.5 rounded text-[9.5px] ${preset.badgeBg}`}>
                             {c.code}
                           </span>
                         </div>
 
                         {/* Course Name */}
-                        <div className="col-span-4 text-xs font-bold text-slate-800">
+                        <div className="col-span-4 text-xs font-bold text-slate-800 dark:text-slate-200">
                           {c.name}
                         </div>
 
@@ -525,10 +639,10 @@ export default function Semester({
                             onChange={(e) => {
                               onEditCourse(c.id, { sks: parseInt(e.target.value, 10) });
                             }}
-                            className="bg-white border border-slate-200 rounded px-2 py-1 font-semibold text-slate-700 text-xs focus:outline-none focus:border-indigo-505 font-mono"
+                            className="bg-white dark:bg-slate-800 border border-slate-205 dark:border-slate-700 text-slate-705 dark:text-slate-300 rounded px-2 py-1 font-semibold text-xs focus:outline-none focus:border-indigo-505 font-mono"
                           >
                             {[1, 2, 3, 4, 5, 6].map(val => (
-                              <option key={val} value={val}>{val} SKS</option>
+                              <option key={val} value={val} className="dark:bg-slate-900">{val} SKS</option>
                             ))}
                           </select>
                         </div>
@@ -542,11 +656,11 @@ export default function Semester({
                               onChange={(e) => {
                                 onEditCourse(c.id, { grade: e.target.value });
                               }}
-                              className="bg-white border border-slate-205 rounded px-2.5 py-1 text-xs font-black text-indigo-700 focus:outline-none focus:border-indigo-500 font-mono"
+                              className="bg-white dark:bg-slate-805 border border-slate-205 dark:border-slate-700 text-indigo-700 dark:text-indigo-400 rounded px-2.5 py-1 text-xs font-black focus:outline-none focus:border-indigo-500 font-mono"
                             >
-                              <option value="-">- Belum Rilis -</option>
+                              <option value="-" className="dark:bg-slate-900">- Belum Rilis -</option>
                               {Object.keys(GRADE_VALUES).map(l => (
-                                <option key={l} value={l}>
+                                <option key={l} value={l} className="dark:bg-slate-900">
                                   {l} (Bobot: {GRADE_VALUES[l].toFixed(1)})
                                 </option>
                               ))}
@@ -561,7 +675,7 @@ export default function Semester({
                             onClick={() => {
                               setCourseToDelete({ id: c.id, name: c.name });
                             }}
-                            className="p-1 rounded text-slate-450 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                            className="p-1 rounded text-slate-450 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-955/20 transition cursor-pointer"
                             title="Hapus Kuliah"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -573,10 +687,10 @@ export default function Semester({
                 </div>
               </div>
             ) : (
-              <div className="border border-dashed border-slate-200 bg-slate-50/40 rounded-xl p-8 text-center flex flex-col items-center justify-center space-y-2">
+              <div className="border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/25 rounded-xl p-8 text-center flex flex-col items-center justify-center space-y-2">
                 <BookOpen className="h-8 w-8 text-slate-400" />
-                <p className="text-xs font-bold text-slate-750">Belum ada mata kuliah di semester {selectedSemTab}</p>
-                <p className="text-[11px] text-slate-500 max-w-xs leading-relaxed">
+                <p className="text-xs font-bold text-slate-750 dark:text-slate-250">Belum ada mata kuliah di semester {selectedSemTab}</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-450 max-w-xs leading-relaxed">
                   Silakan tambahkan mata kuliah baru di atas atau pindahkan mata kuliah yang ada di halaman utama 'Mata Kuliah' untuk menghitung IPS Anda secara otomatis.
                 </p>
               </div>
@@ -584,10 +698,10 @@ export default function Semester({
           </div>
 
           {/* Quick FAQ info tips */}
-          <div className="border border-indigo-100 bg-indigo-50/15 rounded-xl p-4 flex gap-3">
-            <Info className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
-            <div className="text-[11px] text-slate-500 space-y-1">
-              <p className="font-bold text-slate-750">Fungsi Bobot Nilai & SKS:</p>
+          <div className="border border-indigo-100 dark:border-slate-800 bg-indigo-50/15 dark:bg-slate-950/20 rounded-xl p-4 flex gap-3">
+            <Info className="h-5 w-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
+              <p className="font-bold text-slate-750 dark:text-slate-200">Fungsi Bobot Nilai & SKS:</p>
               <p className="leading-relaxed">
                 IPS dihitung dengan cara mengalikan bobot nilai huruf dengan jumlah SKS masing-masing mata kuliah, dijumlahkan lalu dibagi total SKS keseluruhan semester tersebut.
               </p>
@@ -606,18 +720,18 @@ export default function Semester({
       </div>
 
       {semesterToDelete !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center gap-3 text-rose-600">
-              <div className="p-2 bg-rose-50 rounded-full">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/50 backdrop-blur-xs">
+          <div className="relative w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4">
+            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
+              <div className="p-2 bg-rose-50 dark:bg-rose-955/30 rounded-full">
                 <Trash2 className="h-6 w-6" />
               </div>
-              <h3 className="font-display font-bold text-slate-900 text-sm sm:text-base">Hapus Semester {semesterToDelete}</h3>
+              <h3 className="font-display font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base">Hapus Semester {semesterToDelete}</h3>
             </div>
-            <div className="text-xs text-slate-500 space-y-2 leading-relaxed">
-              <p>Apakah Anda yakin ingin menghapus Semester <strong>{semesterToDelete}</strong>?</p>
+            <div className="text-xs text-slate-500 dark:text-slate-400 space-y-2 leading-relaxed">
+              <p>Apakah Anda yakin ingin menghapus Semester <strong className="text-slate-900 dark:text-slate-100">{semesterToDelete}</strong>?</p>
               {courses.filter(c => (c.semester || currentSemester) === semesterToDelete).length > 0 && (
-                <div className="p-3 bg-rose-50 text-rose-800 rounded-lg border border-rose-100 font-semibold text-[11px]">
+                <div className="p-3 bg-rose-50 dark:bg-rose-955/35 text-rose-800 dark:text-rose-400 rounded-lg border border-rose-105 dark:border-rose-900/40 font-semibold text-[11px]">
                   <strong>PERINGATAN:</strong> Semester ini memiliki <strong>{courses.filter(c => (c.semester || currentSemester) === semesterToDelete).length} mata kuliah</strong>. Menghapus semester ini juga akan menghapus mata kuliah tersebut beserta tugas-tugas yang terhubung!
                 </div>
               )}
@@ -626,14 +740,14 @@ export default function Semester({
               <button
                 type="button"
                 onClick={() => setSemesterToDelete(null)}
-                className="rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                className="rounded-lg border border-slate-200 dark:border-slate-800 px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-805 transition cursor-pointer"
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleConfirmDeleteSemester}
-                className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 transition cursor-pointer animate-in zoom-in-50 duration-75"
+                className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-750 transition cursor-pointer animate-in zoom-in-50 duration-75"
               >
                 Hapus Semester
               </button>
@@ -643,22 +757,22 @@ export default function Semester({
       )}
 
       {courseToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-3 text-rose-600">
-              <div className="p-2 bg-rose-50 rounded-full">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-black/50 backdrop-blur-xs">
+          <div className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-450">
+              <div className="p-2 bg-rose-50 dark:bg-rose-955/20 rounded-full">
                 <Trash2 className="h-6 w-6" />
               </div>
-              <h3 className="font-display font-bold text-slate-900 text-sm sm:text-base">Hapus Mata Kuliah</h3>
+              <h3 className="font-display font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base">Hapus Mata Kuliah</h3>
             </div>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Hapus <strong>{courseToDelete.name}</strong> dari Semester <strong>{selectedSemTab}</strong>?
+            <p className="text-xs text-slate-505 dark:text-slate-400 leading-relaxed">
+              Hapus <strong className="text-slate-900 dark:text-slate-100">{courseToDelete.name}</strong> dari Semester <strong className="text-slate-900 dark:text-slate-100">{selectedSemTab}</strong>?
             </p>
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setCourseToDelete(null)}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                className="rounded-lg border border-slate-205 dark:border-slate-800 px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 Batal
               </button>

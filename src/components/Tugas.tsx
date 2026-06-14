@@ -178,19 +178,19 @@ export default function Tugas({
   return (
     <div className="space-y-6" id="tasks-manager-panel">
       {/* View Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-805 pb-4">
         <div>
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <ClipboardList className="h-6 w-6 text-indigo-600" /> Daftar Tugas & Pengumpulan
+          <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+            <ClipboardList className="h-6 w-6 text-indigo-600 dark:text-indigo-400" /> Daftar Tugas & Pengumpulan
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Pantau semua tugas akademik, atur tanggal pengumpulan, tingkat prioritas, status kerja beserta notifikasi alarmnya.
           </p>
         </div>
         <button
           onClick={openAddModal}
           disabled={courses.length === 0}
-          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer leading-none shrink-0"
+          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-600 disabled:cursor-not-allowed cursor-pointer leading-none shrink-0"
           id="btn-add-task-main"
         >
           <Plus className="h-4.5 w-4.5" /> Tambah Tugas Baru
@@ -198,34 +198,34 @@ export default function Tugas({
       </div>
 
       {courses.length === 0 && (
-        <div className="p-4 bg-amber-50 border border-amber-200 text-amber-850 rounded-xl text-xs flex items-center gap-2.5 font-bold">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-550" />
-          <span>Silakan <strong className="text-amber-900">tambahkan minimal satu Mata Kuliah terlebih dahulu</strong> sebelum mendata atau membuat daftar tugas baru.</span>
+        <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 text-amber-850 dark:text-amber-400 rounded-xl text-xs flex items-center gap-2.5 font-bold">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-550 dark:text-amber-400" />
+          <span>Silakan <strong className="text-amber-905 dark:text-amber-300">tambahkan minimal satu Mata Kuliah terlebih dahulu</strong> sebelum mendata atau membuat daftar tugas baru.</span>
         </div>
       )}
 
       {/* Filter and Search Panel */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4 shadow-3xs" id="filters-container">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4 shadow-3xs" id="filters-container">
         <div className="flex flex-col md:flex-row gap-3">
           {/* Search Box */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-405 font-bold" />
+            <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400 font-bold" />
             <input
               type="text"
               placeholder="Cari tugas berdasarkan judul atau rangkuman deskripsi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2.5 text-xs font-semibold focus:bg-white focus:border-indigo-505 hover:border-slate-300 focus:outline-none transition-all placeholder:text-slate-400"
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 pl-10 pr-4 py-2.5 text-xs font-semibold focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-505 hover:border-slate-300 dark:hover:border-slate-700 focus:outline-none transition-all placeholder:text-slate-400 dark:text-slate-200"
             />
           </div>
 
           {/* Sorter Selector */}
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Urutkan:</span>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Urutkan:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 hover:bg-slate-50 transition cursor-pointer"
+              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               <option value="deadlineAsc">🗓️ Deadline Terdekat</option>
               <option value="deadlineDesc">🗓️ Deadline Terjauh</option>
@@ -236,9 +236,9 @@ export default function Tugas({
         </div>
 
         {/* Faceted Filters Accordion */}
-        <div className="flex flex-wrap gap-2.5 items-center justify-start border-t border-slate-100 pt-3.5 text-xs">
-          <span className="flex items-center gap-1 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-            <Filter className="h-3 w-3 text-slate-450" /> Filter:
+        <div className="flex flex-wrap gap-2.5 items-center justify-start border-t border-slate-100 dark:border-slate-800 pt-3.5 text-xs">
+          <span className="flex items-center gap-1 text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+            <Filter className="h-3 w-3 text-slate-450 dark:text-slate-400" /> Filter:
           </span>
 
           {/* Course filter */}
@@ -246,7 +246,7 @@ export default function Tugas({
             <select
               value={filterCourse}
               onChange={(e) => setFilterCourse(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 font-bold focus:outline-none hover:bg-slate-50 cursor-pointer transition-all"
+              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 font-bold focus:outline-none hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-all"
             >
               <option value="all">Mata Kuliah (Semua)</option>
               {courses.map(c => (
@@ -260,7 +260,7 @@ export default function Tugas({
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 font-bold focus:outline-none hover:bg-slate-50 cursor-pointer transition-all"
+              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 font-bold focus:outline-none hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-all"
             >
               <option value="all">Semua Prioritas</option>
               <option value="Tinggi">Tinggi</option>
@@ -274,7 +274,7 @@ export default function Tugas({
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 font-bold focus:outline-none hover:bg-slate-50 cursor-pointer transition-all"
+              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 font-bold focus:outline-none hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-all"
             >
               <option value="all">Semua Status</option>
               <option value="Belum Mulai">Belum Mulai</option>
@@ -292,7 +292,7 @@ export default function Tugas({
                 setFilterStatus('all');
                 setSearchQuery('');
               }}
-              className="text-xs text-indigo-600 hover:text-indigo-850 font-bold ml-auto transition-colors cursor-pointer"
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-850 dark:hover:text-indigo-300 font-bold ml-auto transition-colors cursor-pointer"
             >
               Atur Ulang Filter
             </button>
@@ -301,7 +301,7 @@ export default function Tugas({
       </div>
 
       {/* Task Count Label */}
-      <p className="text-xs text-slate-400 font-bold">
+      <p className="text-xs text-slate-400 dark:text-slate-500 font-bold">
         Memperlihatkan {filteredTasks.length} dari total {tasks.length} tugas akademik.
       </p>
 
@@ -314,7 +314,7 @@ export default function Tugas({
             const alert = getDeadlineAlert(t.deadline, todayStr, t.status);
 
             // Determine alarm color borders
-            let cardBorderX = 'border-l-slate-300';
+            let cardBorderX = 'border-l-slate-300 dark:border-l-slate-700';
             if (t.status === 'Selesai') {
               cardBorderX = 'border-l-emerald-500';
             } else if (alert?.type === 'danger') {
@@ -328,19 +328,19 @@ export default function Tugas({
             return (
               <div
                 key={t.id}
-                className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs hover:shadow-xs transition-all duration-200 hover:-translate-y-0.5 flex flex-col justify-between gap-4 border-l-4 ${cardBorderX}`}
+                className={`rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xs hover:shadow-xs transition-all duration-200 hover:-translate-y-0.5 flex flex-col justify-between gap-4 border-l-4 ${cardBorderX}`}
                 id={`task-card-${t.id}`}
               >
                 <div className="space-y-3">
                   {/* Card Badges */}
-                  <div className="flex items-start justify-between gap-25">
-                    <div className="flex flex-wrap items-center gap-1.5 max-w-[85%]">
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex flex-wrap items-center gap-1.5 max-w-[85%] font-sans">
                       {course ? (
                         <span className={`inline-block text-[9px] uppercase font-bold tracking-tight px-2 py-0.5 rounded border ${colorPreset?.border} ${colorPreset?.bg} ${colorPreset?.text}`}>
                           {course.name}
                         </span>
                       ) : (
-                        <span className="text-[9px] font-bold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full">
+                        <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-705 px-2 py-0.5 rounded-full">
                           MK Terhapus
                         </span>
                       )}
@@ -355,14 +355,14 @@ export default function Tugas({
                     <div className="flex items-center gap-0.5 shrink-0">
                       <button
                         onClick={() => openEditModal(t)}
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition cursor-pointer"
+                        className="rounded-lg p-1.5 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer"
                         title="Sunting Tugas"
                       >
                         <Edit className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete(t.id, t.title)}
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
+                        className="rounded-lg p-1.5 text-slate-400 dark:text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-955/20 hover:text-rose-600 dark:hover:text-rose-405 transition cursor-pointer"
                         title="Hapus Tugas"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -372,30 +372,30 @@ export default function Tugas({
 
                   {/* Title & Description */}
                   <div className="space-y-1.5">
-                    <h3 className={`font-display text-sm sm:text-base font-bold text-slate-900 leading-snug ${t.status === 'Selesai' ? 'line-through text-slate-400 font-medium' : ''}`}>
+                    <h3 className={`font-display text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 leading-snug ${t.status === 'Selesai' ? 'line-through text-slate-400 dark:text-slate-500 font-medium' : ''}`}>
                       {t.title}
                     </h3>
-                    <p className={`text-xs leading-relaxed text-slate-550 ${t.status === 'Selesai' ? 'text-slate-400' : ''}`}>
-                      {t.description || <em className="text-slate-400">Tidak ada rincian deskripsi tambahan.</em>}
+                    <p className={`text-xs leading-relaxed text-slate-550 dark:text-slate-400 ${t.status === 'Selesai' ? 'text-slate-400 dark:text-slate-550' : ''}`}>
+                      {t.description || <em className="text-slate-400 dark:text-slate-500 font-medium pb-0.5 inline-block">Tidak ada rincian deskripsi tambahan.</em>}
                     </p>
                   </div>
                 </div>
 
                 {/* Footer section */}
-                <div className="pt-3.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="pt-3.5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   {/* Deadline date */}
-                  <div className="space-y-1 bg-slate-50/50 p-2 rounded-lg border border-slate-100/60 flex-1">
-                    <div className="flex items-center gap-1.5 text-slate-600 font-bold text-[11px]">
-                      <Calendar className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                  <div className="space-y-1 bg-slate-50/50 dark:bg-slate-950/40 p-2 rounded-lg border border-slate-100/60 dark:border-slate-805 flex-1">
+                    <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-bold text-[11px]">
+                      <Calendar className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
                       <span>{formatIndonesianDate(t.deadline)}</span>
                     </div>
 
                     {/* Alarm Remaining Time warning */}
                     {t.status !== 'Selesai' && alert && (
                       <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded border justify-center ${
-                        alert.type === 'danger' ? 'text-rose-705 border-rose-200 bg-rose-50 animate-pulse' : 
-                        alert.type === 'warning' ? 'text-amber-705 border-amber-200 bg-amber-50' : 
-                        'text-indigo-705 border-indigo-200 bg-indigo-50'
+                        alert.type === 'danger' ? 'text-rose-705 dark:text-rose-400 border-rose-200 dark:border-rose-900/45 bg-rose-50 dark:bg-rose-950/20 animate-pulse' : 
+                        alert.type === 'warning' ? 'text-amber-705 dark:text-amber-400 border-amber-200 dark:border-amber-900/45 bg-amber-50 dark:bg-amber-950/20' : 
+                        'text-indigo-705 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/40 bg-indigo-50 dark:bg-indigo-950/20'
                       }`}>
                         🔔 {alert.text}
                       </span>
@@ -411,14 +411,14 @@ export default function Tugas({
                     {t.status !== 'Selesai' ? (
                       <button
                         onClick={() => onEditTask(t.id, { status: 'Selesai' })}
-                        className="rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition px-2.5 py-1.5 shadow-3xs border border-emerald-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                        className="rounded-lg bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-slate-800 hover:border-emerald-300 dark:hover:border-emerald-705 transition px-2.5 py-1.5 shadow-3xs border border-emerald-200 dark:border-emerald-900/30 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                       >
                         Selesaikan ✅
                       </button>
                     ) : (
                       <button
                         onClick={() => onEditTask(t.id, { status: 'Belum Mulai' })}
-                        className="rounded-lg bg-slate-50 text-slate-700 hover:bg-slate-100 hover:border-slate-350 hover:text-slate-900 transition px-2.5 py-1.5 shadow-3xs border border-slate-205 text-[10px] font-bold cursor-pointer"
+                        className="rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-350 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-white transition px-2.5 py-1.5 shadow-3xs border border-slate-205 dark:border-slate-700 text-[10px] font-bold cursor-pointer"
                       >
                         Buka Kembali
                       </button>
@@ -430,12 +430,12 @@ export default function Tugas({
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 px-5 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200" id="empty-tasks">
-          <div className="rounded-full bg-indigo-50 p-4 text-indigo-505 mb-3">
-            <ClipboardList className="h-8 w-8 text-indigo-500" />
+        <div className="flex flex-col items-center justify-center py-16 px-5 text-center bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800" id="empty-tasks">
+          <div className="rounded-full bg-indigo-50 dark:bg-slate-800 p-4 mb-3">
+            <ClipboardList className="h-8 w-8 text-indigo-500 dark:text-indigo-400" />
           </div>
-          <h3 className="font-display font-bold text-slate-800 text-base">Tugas Tidak Ditemukan</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed">
+          <h3 className="font-display font-bold text-slate-800 dark:text-slate-200 text-base">Tugas Tidak Ditemukan</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm leading-relaxed">
             {tasks.length > 0
               ? 'Tidak ada tugas yang sesuai dengan pencarian atau kriteria filter Anda saat ini.'
               : 'Anda belum mendaftarkan tugas akademik. Mulailah mencatat tugas mandiri Anda untuk memicu alarm jadwal pengerjaan!'}
@@ -456,7 +456,7 @@ export default function Tugas({
             <button
               onClick={openAddModal}
               disabled={courses.length === 0}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-600 disabled:cursor-not-allowed cursor-pointer"
             >
               <Plus className="h-4 w-4" /> Tambah Tugas Baru
             </button>

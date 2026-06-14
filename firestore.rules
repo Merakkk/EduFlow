@@ -58,23 +58,23 @@ service cloud.firestore {
 
     // Match rules
     match /workspaces/{workspaceId} {
-      allow get: if isValidId(workspaceId);
-      allow create: if isValidId(workspaceId) && isValidWorkspace(incoming());
-      allow update: if isValidId(workspaceId) && isValidWorkspace(incoming());
+      allow get: if request.auth != null && request.auth.uid == workspaceId;
+      allow create: if request.auth != null && request.auth.uid == workspaceId && isValidWorkspace(incoming());
+      allow update: if request.auth != null && request.auth.uid == workspaceId && isValidWorkspace(incoming());
       allow delete: if false; // prevent total deletion from client
 
       match /courses/{courseId} {
-        allow list, get: if isValidId(workspaceId);
-        allow create: if isValidId(workspaceId) && isValidId(courseId) && isValidCourse(incoming());
-        allow update: if isValidId(workspaceId) && isValidId(courseId) && isValidCourse(incoming());
-        allow delete: if isValidId(workspaceId) && isValidId(courseId);
+        allow list, get: if request.auth != null && request.auth.uid == workspaceId;
+        allow create: if request.auth != null && request.auth.uid == workspaceId && isValidId(courseId) && isValidCourse(incoming());
+        allow update: if request.auth != null && request.auth.uid == workspaceId && isValidId(courseId) && isValidCourse(incoming());
+        allow delete: if request.auth != null && request.auth.uid == workspaceId && isValidId(courseId);
       }
 
       match /tasks/{taskId} {
-        allow list, get: if isValidId(workspaceId);
-        allow create: if isValidId(workspaceId) && isValidId(taskId) && isValidTask(incoming());
-        allow update: if isValidId(workspaceId) && isValidId(taskId) && isValidTask(incoming());
-        allow delete: if isValidId(workspaceId) && isValidId(taskId);
+        allow list, get: if request.auth != null && request.auth.uid == workspaceId;
+        allow create: if request.auth != null && request.auth.uid == workspaceId && isValidId(taskId) && isValidTask(incoming());
+        allow update: if request.auth != null && request.auth.uid == workspaceId && isValidId(taskId) && isValidTask(incoming());
+        allow delete: if request.auth != null && request.auth.uid == workspaceId && isValidId(taskId);
       }
     }
   }
