@@ -7,6 +7,7 @@ import MataKuliah from './components/MataKuliah';
 import Tugas from './components/Tugas';
 import Kalender from './components/Kalender';
 import Semester from './components/Semester';
+import ChatAI from './components/ChatAI';
 import { 
   doc, 
   collection, 
@@ -30,7 +31,8 @@ import {
   RotateCcw,
   Layers,
   LogOut,
-  User as UserIcon
+  User as UserIcon,
+  MessageSquare
 } from 'lucide-react';
 
 export default function App() {
@@ -712,6 +714,7 @@ export default function App() {
 
           {/* Menus List */}
           <div className="space-y-1.5" id="desktop-menu-list">
+            <button onClick={() => setActiveTab('chat')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold ${activeTab === 'chat' ? 'bg-indigo-50 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}><MessageSquare className="h-4.5 w-4.5" />Chat AI</button>
             <button
               onClick={() => setActiveTab('dashboard')}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -871,6 +874,7 @@ export default function App() {
         {/* View Screens content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6" id="applet-viewport">
           <div className="max-w-6xl mx-auto pb-16 md:pb-6">
+            <div hidden={activeTab !== 'chat'}><ChatAI /></div>
             {activeTab === 'dashboard' && (
               <Dashboard 
                 courses={courses}
@@ -936,6 +940,7 @@ export default function App() {
 
         {/* Mobile Bottom Navigation Bar Footer */}
         <div className="md:hidden fixed bottom-4 left-4 right-4 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 flex items-center justify-around py-2 px-3 rounded-2xl shadow-lg ring-1 ring-black/5 dark:ring-white/5" id="mobile-nav">
+          <button onClick={() => setActiveTab('chat')} className={`flex flex-col items-center gap-0.5 text-[9.5px] font-bold ${activeTab === 'chat' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}><MessageSquare className="h-4.5 w-4.5" /><span>Chat AI</span></button>
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`flex flex-col items-center gap-0.5 text-[9.5px] font-bold transition-transform active:scale-95 ${
@@ -1107,3 +1112,5 @@ export default function App() {
     </div>
   );
 }
+
+

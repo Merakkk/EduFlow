@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
+import { handleChat } from './server/chat-core.ts';
 
 dotenv.config();
 
@@ -17,6 +18,10 @@ async function startServer() {
   // Body parser with size limits for screenshot uploads
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+  // Local development and Vercel use the same authenticated chat implementation.
+  app.get('/api/chat', (req, res) => handleChat(req, res));
+  app.post('/api/chat', (req, res) => handleChat(req, res));
 
   // Initialize Gemini AI
   const apiKey = process.env.GEMINI_API_KEY;
@@ -128,3 +133,5 @@ async function startServer() {
 }
 
 startServer();
+
+
