@@ -36,4 +36,6 @@ export interface Task {
   status: TaskStatus;
 }
 
-export type ActiveTab = 'dashboard' | 'courses' | 'tasks' | 'calendar' | 'semester';
+export type ActiveTab = 'dashboard' | 'courses' | 'tasks' | 'calendar' | 'semester' | 'chat';
+
+

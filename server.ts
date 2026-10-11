@@ -1,14 +1,11 @@
 import express from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
+import { handleChat } from './server/chat-core.ts';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
@@ -18,16 +15,12 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+  // Local development and Vercel use the same authenticated chat implementation.
+  app.get('/api/chat', (req, res) => handleChat(req, res));
+  app.post('/api/chat', (req, res) => handleChat(req, res));
+
   // Initialize Gemini AI
   const apiKey = process.env.GEMINI_API_KEY;
-  const ai = new GoogleGenAI({
-    apiKey: apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      },
-    },
-  });
 
   // API endpoint for parsing schedule from screenshots
   app.post('/api/parse-schedule', async (req, res) => {
@@ -43,6 +36,9 @@ async function startServer() {
           error: 'Kunci API Gemini tidak terkonfigurasi pada server. Silakan atur GEMINI_API_KEY di panel Secrets.' 
         });
       }
+
+      // Construct Gemini only for schedule parsing, so Chat AI can start without it.
+      const ai = new GoogleGenAI({ apiKey, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } });
 
       // Prepare parts for Gemini
       const cleanBase64 = image.replace(/^data:image\/\w+;base64,/, '');
@@ -128,3 +124,5 @@ async function startServer() {
 }
 
 startServer();
+
+
