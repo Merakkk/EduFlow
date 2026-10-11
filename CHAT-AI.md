@@ -7,9 +7,10 @@ Dasar: source repositori Merakkk/EduFlow, diambil 11 Oktober 2026. Commit dasar:
 - src/components/ChatAI.tsx: halaman chat dengan pilihan GPT/OpenAI, Gemini, Claude, DeepSeek; status penyedia dari server; Enter/Shift+Enter; indikator menunggu; pesan error; percakapan baru; respons ditampilkan sebagai teks React.
 - src/App.tsx dan src/types.ts: menu Chat AI desktop/ponsel. Komponen dipertahankan ketika berpindah tab dan membersihkan percakapan ketika akun berubah. Tidak membaca data jadwal atau tugas.
 - server/chat-core.ts: inti autentikasi dan adapter empat penyedia. Endpoint tetap, model dipilih pengelola melalui env, bukan URL bebas dari pengguna. Token Firebase diverifikasi menggunakan RS256, kid, aud, iss, exp, iat, auth_time dan UID. Mode anonymous/tamu ditolak. Daftar UID server wajib; tidak ada akses AI bila konfigurasi kosong.
-- api/chat.ts dan server.ts: Vercel serta development lokal memakai inti yang sama.
+- api/chat.ts dan server.ts: Vercel serta development lokal memakai inti yang sama. Inisialisasi Gemini dipindahkan ke operasi parse-schedule agar server chat tidak mensyaratkan key Gemini saat startup. Variabel import.meta.url yang tidak dipakai dihapus agar bundle server CommonJS tidak menggunakan import.meta yang kosong.
 - .env.example: hanya nama variabel/pengaturan contoh; tidak ada key AI sungguhan.
 - tests/chat-core.test.ts: pengujian sintetis tanpa API/credential sungguhan.
+- qa/chat-preview.html dan qa/chat-preview.tsx: halaman pemeriksaan lokal yang merender komponen chat sebenarnya tanpa login atau panggilan API berbayar; bukan bagian entry build produksi.
 
 ## Mengaktifkan pada Vercel setelah build dan preview lulus
 
@@ -24,7 +25,11 @@ Dasar: source repositori Merakkk/EduFlow, diambil 11 Oktober 2026. Commit dasar:
 
 Pengujian inti dijalankan melalui Node.js lokal: 23 test, 23 pass, 0 fail. Mencakup JWT bertanda tangan sintetis, token rusak/kedaluwarsa/project salah/anonymous/algoritma salah, kegagalan layanan sertifikat, batas panjang dan urutan pesan, permintaan bersamaan, batas laju, adapter empat penyedia dengan fetch tiruan, error upstream tanpa membocorkan body, daftar akun, status tanpa key, dan cleanup setelah gagal.
 
-Build frontend, typecheck penuh, browser QA, Vercel Preview dan API sungguhan BELUM dilakukan. Instalasi dependensi sebelumnya tertahan: automatic approval review gagal karena usage limit, bukan karena penilaian tidak aman. Tidak menggunakan jalur lain untuk melewati pemeriksaan itu. Branch draft memuat source kandidat; belum ada merge, deploy manual, atau panggilan API berbayar. Vercel mungkin otomatis membuat Preview dari branch/PR sesuai pengaturan repositori; statusnya perlu diperiksa sebelum digunakan. Test adapter membuktikan penyusunan/parsing respons tiruan, bukan kompatibilitas runtime provider.
+Pemeriksaan lokal pada 11 Oktober 2026: npm ci berhasil (283 paket); tsc --noEmit berhasil dengan exit 0; npm run build berhasil dengan exit 0, Vite 6.4.3 memproses 1701 modul dan esbuild menghasilkan bundle server. Tidak menambahkan dependensi atau mengubah package-lock. Peringatan bundle frontend lebih dari 500 kB masih ada (JavaScript sekitar 846 kB sebelum gzip); perlu evaluasi pemisahan bundle untuk performa. Peringatan import.meta pada bundle CommonJS hilang setelah perbaikan startup di atas.
+
+Browser QA lokal merender komponen chat sebenarnya pada desktop dan viewport 390 x 844. Tidak ditemukan overflow horizontal; pilihan penyedia dan area input terlihat, input/kirim tidak tersedia bagi pengguna yang belum login, dan konsol pemeriksaan desktop tidak mencatat warning/error. Bukti gambar disimpan di eduflow-chat-desktop.png dan eduflow-chat-mobile.png di folder induk source. Ini pemeriksaan tampilan guest saja, bukan bukti login, respons AI, integrasi navigasi seluruh aplikasi, atau mode gelap.
+
+Vercel otomatis membuat Preview untuk draft PR #1. Pemeriksaan GitHub/Vercel pada commit 77708de3c1f2cf4373642ccc0586e479c7ffb0b9 melaporkan success/Ready; status tersebut membuktikan deployment otomatis kandidat, bukan keberhasilan chat dengan key sungguhan. Revisi setelah pemeriksaan tersebut harus melewati pemeriksaannya sendiri. Main tidak diubah, belum ada merge atau deploy manual. API sungguhan, login akun allowlist, revocation, serta cold start endpoint Vercel belum diuji. Test adapter membuktikan penyusunan/parsing respons tiruan, bukan kompatibilitas runtime provider. Kendala usage limit sebelumnya sudah berakhir dan instalasi/build diselesaikan setelah pemeriksaan izin kembali tersedia.
 
 Batas laju 8 permintaan/menit dan satu permintaan aktif berlaku PER PROSES; bukan kuota terdistribusi atau batas biaya global. Vercel dapat memiliki banyak instance. Sebelum pemakaian luas, tambahkan limiter terdistribusi dan atur billing limit penyedia. Allowlist UID wajib mengurangi akses ke akun yang ditentukan.
 
